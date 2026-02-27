@@ -23,15 +23,7 @@ import type {
   Shop,
 } from "@miu2d/types";
 import { logger } from "../core/logger";
-
-/**
- * 获取 API 基础 URL（生产部署时前端和后端不同源）
- */
-function getApiBaseUrl(): string {
-  const apiUrl = import.meta.env.VITE_API_URL as string | undefined;
-  if (apiUrl) return apiUrl.replace(/\/+$/, "");
-  return "";
-}
+import { getResourceDomain } from "../resource/resource-paths";
 
 // ==================== 数据类型 ====================
 
@@ -142,7 +134,7 @@ export interface LevelResponse {
  * @param path    - 相对于 `/game/:slug/api/` 的路径，例如 `config`、`scenes/npc/xxx/yyy`
  */
 export async function fetchGameApi<T>(gameSlug: string, path: string): Promise<T> {
-  const apiUrl = `${getApiBaseUrl()}/game/${gameSlug}/api/${path}${path.includes("?") ? "&" : "?"}_t=${Date.now()}`;
+  const apiUrl = `${getResourceDomain()}/game/${gameSlug}/api/${path}${path.includes("?") ? "&" : "?"}_t=${Date.now()}`;
   const response = await fetch(apiUrl, { credentials: "include" });
   if (!response.ok) {
     throw new Error(`[GameDataApi] ${apiUrl} → HTTP ${response.status}: ${response.statusText}`);
@@ -154,7 +146,7 @@ export async function fetchGameApi<T>(gameSlug: string, path: string): Promise<T
  * 统一的游戏 API 二进制请求入口（返回 ArrayBuffer）
  */
 export async function fetchGameApiBinary(gameSlug: string, path: string): Promise<ArrayBuffer> {
-  const apiUrl = `${getApiBaseUrl()}/game/${gameSlug}/api/${path}${path.includes("?") ? "&" : "?"}_t=${Date.now()}`;
+  const apiUrl = `${getResourceDomain()}/game/${gameSlug}/api/${path}${path.includes("?") ? "&" : "?"}_t=${Date.now()}`;
   const response = await fetch(apiUrl, { credentials: "include" });
   if (!response.ok) {
     throw new Error(`[GameDataApi] ${apiUrl} → HTTP ${response.status}: ${response.statusText}`);
