@@ -23,7 +23,7 @@ As a proof of concept, Miu2D has been used to rebuild **three classic Kingsoft (
 
 ---
 
-### 🌙 Legend of Yue Ying (剑侠情缘外传：月影传说) · 2001
+### <img src="packages/web/public/screenshot/logo-yuying.webp" height="32" style="vertical-align:middle"> Legend of Yue Ying (剑侠情缘外传：月影传说) · 2001
 
 | | |
 |---|---|
@@ -37,7 +37,7 @@ The largest production Xishanju had ever mounted at the time. The story branches
 
 ---
 
-### ⚔️ Swords of Legends 2 (剑侠情缘贰) · 1998
+### <img src="packages/web/public/screenshot/logo-sword2.png" height="32" style="vertical-align:middle"> Swords of Legends 2 (剑侠情缘贰) · 1998
 
 | | |
 |---|---|
@@ -51,7 +51,7 @@ Set twenty years after the original, hero 南宫飞云 — son of the first game
 
 ---
 
-### 🗡️ New Swords of Legends (新剑侠情缘) · 2001
+### <img src="packages/web/public/screenshot/logo-new-swords.png" height="32" style="vertical-align:middle"> New Swords of Legends (新剑侠情缘) · 2001
 
 | | |
 |---|---|

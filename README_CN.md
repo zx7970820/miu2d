@@ -23,7 +23,7 @@ Miu2D 是一个 **160,000 行**的 2D RPG 引擎，使用 TypeScript 和 Rust �
 
 ---
 
-### 🌙 剑侠情缘外传：月影传说 · 2001
+### <img src="packages/web/public/screenshot/logo-yuying.webp" height="32" style="vertical-align:middle"> 剑侠情缘外传：月影传说 · 2001
 
 | | |
 |---|---|
@@ -37,7 +37,7 @@ Miu2D 是一个 **160,000 行**的 2D RPG 引擎，使用 TypeScript 和 Rust �
 
 ---
 
-### ⚔️ 剑侠情缘贰 · 1998
+### <img src="packages/web/public/screenshot/logo-sword2.png" height="32" style="vertical-align:middle"> 剑侠情缘贰 · 1998
 
 | | |
 |---|---|
@@ -51,7 +51,7 @@ Miu2D 是一个 **160,000 行**的 2D RPG 引擎，使用 TypeScript 和 Rust �
 
 ---
 
-### 🗡️ 新剑侠情缘 · 2001
+### <img src="packages/web/public/screenshot/logo-new-swords.png" height="32" style="vertical-align:middle"> 新剑侠情缘 · 2001
 
 | | |
 |---|---|
