@@ -13,10 +13,10 @@
 import type { AsfData } from "@miu2d/engine/resource/format/asf";
 import { getFrameCanvas } from "@miu2d/engine/resource/format/asf";
 import { decodeAsfWasm } from "@miu2d/engine/wasm/wasm-asf-decoder";
-import { initWasm } from "@miu2d/engine/wasm/wasm-manager";
 import type { Npc, NpcRes, NpcState } from "@miu2d/types";
 import { getNpcImageCandidates, NpcStateLabels, npcStateToResourceKey } from "@miu2d/types";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useWasm } from "../../hooks";
 import { buildResourceUrl } from "../../utils";
 
 // ========== 类型定义 ==========
@@ -55,8 +55,7 @@ export function NpcPreview({ gameSlug, npc, resource }: NpcPreviewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number | null>(null);
 
-  // WASM 状态
-  const [wasmReady, setWasmReady] = useState(false);
+  const wasmReady = useWasm();
 
   // 当前选中的状态
   const [selectedState, setSelectedState] = useState<NpcState>("Stand");
@@ -80,15 +79,6 @@ export function NpcPreview({ gameSlug, npc, resource }: NpcPreviewProps) {
 
   // 获取实际使用的资源配置（优先使用关联的资源，否则使用 NPC 自身的资源）
   const resources = resource?.resources ?? npc?.resources;
-
-  // ========== 初始化 WASM ==========
-  useEffect(() => {
-    initWasm()
-      .then(() => setWasmReady(true))
-      .catch((err) => {
-        console.error("Failed to init WASM:", err);
-      });
-  }, []);
 
   // ========== 当前状态的图片路径（纯字符串，稳定引用） ==========
   const currentImagePath = useMemo(() => {

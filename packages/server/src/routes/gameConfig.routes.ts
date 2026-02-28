@@ -135,31 +135,43 @@ gameConfigRoutes.post(":gameSlug/api/logo", async (c) => {
     const contentType = c.req.header("content-type") || "image/png";
     const key = logoStorageKey(game.id);
 
+    // 先上传 S3，再更新 DB。若 DB 更新失败则删除已上传的 S3 对象（补偿），
+    // 保证 S3 和 DB 状态最终一致：DB 无 logoUrl 则 S3 也无文件。
     await s3.uploadFile(key, body, contentType);
 
-    // 更新 gameConfig 的 logoUrl
     const logoUrl = `/game/${gameSlug}/api/logo`;
-    const [existing] = await db
-      .select()
-      .from(gameConfigs)
-      .where(eq(gameConfigs.gameId, game.id))
-      .limit(1);
+    try {
+      const [existing] = await db
+        .select()
+        .from(gameConfigs)
+        .where(eq(gameConfigs.gameId, game.id))
+        .limit(1);
 
-    if (existing) {
-      const defaults = createDefaultGameConfig();
-      const raw = existing.data as Record<string, unknown>;
-      const merged = { ...defaults, ...raw, logoUrl };
-      const data = GameConfigDataSchema.parse(merged);
-      await db
-        .update(gameConfigs)
-        .set({ data, updatedAt: new Date() })
-        .where(eq(gameConfigs.gameId, game.id));
-    } else {
-      const data = GameConfigDataSchema.parse({
-        ...createDefaultGameConfig(),
-        logoUrl,
-      });
-      await db.insert(gameConfigs).values({ gameId: game.id, data });
+      if (existing) {
+        const defaults = createDefaultGameConfig();
+        const raw = existing.data as Record<string, unknown>;
+        const merged = { ...defaults, ...raw, logoUrl };
+        const data = GameConfigDataSchema.parse(merged);
+        await db
+          .update(gameConfigs)
+          .set({ data, updatedAt: new Date() })
+          .where(eq(gameConfigs.gameId, game.id));
+      } else {
+        const data = GameConfigDataSchema.parse({
+          ...createDefaultGameConfig(),
+          logoUrl,
+        });
+        await db.insert(gameConfigs).values({ gameId: game.id, data });
+      }
+    } catch (dbError) {
+      // DB 写入失败：回滚 S3 上传，避免产生孤立文件
+      logger.error("[uploadLogo] DB update failed, rolling back S3 upload:", dbError);
+      try {
+        await s3.deleteFile(key);
+      } catch (s3Error) {
+        logger.error("[uploadLogo] S3 rollback also failed, orphaned key:", key, s3Error);
+      }
+      throw dbError;
     }
 
     logger.log(`[uploadLogo] Logo uploaded for game ${gameSlug}`);
@@ -202,14 +214,9 @@ gameConfigRoutes.delete(":gameSlug/api/logo", async (c) => {
       return c.json({ error: "No access" }, 403);
     }
 
-    // 删除 S3 中的 logo
-    try {
-      await s3.deleteFile(logoStorageKey(game.id));
-    } catch {
-      // 文件可能不存在，忽略
-    }
-
-    // 清除 gameConfig 中的 logoUrl
+    // 先清除 DB 中的 logoUrl，再删除 S3 文件。
+    // 若顺序颠倒（S3 先删），DB 更新失败会导致 DB 仍保存指向已删除文件的 URL（死链）。
+    // 当前顺序下即使 S3 删除失败，DB 已无引用，用户也不会看到死链（S3 产生孤立文件，后续可清理）。
     const [existing] = await db
       .select()
       .from(gameConfigs)
@@ -225,6 +232,13 @@ gameConfigRoutes.delete(":gameSlug/api/logo", async (c) => {
         .update(gameConfigs)
         .set({ data, updatedAt: new Date() })
         .where(eq(gameConfigs.gameId, game.id));
+    }
+
+    // DB 更新成功后，清理 S3（失败只产生孤立对象，不影响一致性）
+    try {
+      await s3.deleteFile(logoStorageKey(game.id));
+    } catch {
+      logger.warn(`[deleteLogo] S3 file not found or delete failed for game ${game.id}, orphaned object may exist`);
     }
 
     logger.log(`[deleteLogo] Logo deleted for game ${gameSlug}`);

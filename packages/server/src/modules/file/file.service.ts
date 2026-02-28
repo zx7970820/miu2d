@@ -474,23 +474,38 @@ export class FileService {
   }
 
   /**
-   * 递归软删除文件/目录及其子项
+   * 递归收集文件/目录及其所有子项的 ID（仅未删除的节点）
    */
-  private async softDeleteRecursive(fileId: string): Promise<void> {
-    const now = new Date();
+  private async collectAllIds(fileId: string): Promise<string[]> {
+    const ids: string[] = [fileId];
 
-    // 标记当前文件/目录为已删除
-    await db.update(files).set({ deletedAt: now }).where(eq(files.id, fileId));
-
-    // 递归处理子项
     const children = await db
       .select({ id: files.id })
       .from(files)
       .where(and(eq(files.parentId, fileId), isNull(files.deletedAt)));
 
     for (const child of children) {
-      await this.softDeleteRecursive(child.id);
+      const childIds = await this.collectAllIds(child.id);
+      ids.push(...childIds);
     }
+
+    return ids;
+  }
+
+  /**
+   * 软删除文件/目录及其所有子项。
+   * 先收集所有需要标记的 ID，再通过单次事务批量更新，避免部分更新后失败导致数据不一致。
+   */
+  private async softDeleteRecursive(fileId: string): Promise<void> {
+    const allIds = await this.collectAllIds(fileId);
+    const now = new Date();
+
+    await db.transaction(async (tx) => {
+      await tx
+        .update(files)
+        .set({ deletedAt: now })
+        .where(inArray(files.id, allIds));
+    });
   }
 
   /**

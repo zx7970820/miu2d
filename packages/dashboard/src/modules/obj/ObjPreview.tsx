@@ -8,10 +8,10 @@
 import type { AsfData } from "@miu2d/engine/resource/format/asf";
 import { getFrameCanvas } from "@miu2d/engine/resource/format/asf";
 import { decodeAsfWasm } from "@miu2d/engine/wasm/wasm-asf-decoder";
-import { initWasm } from "@miu2d/engine/wasm/wasm-manager";
 import type { Obj, ObjRes, ObjResource, ObjState } from "@miu2d/types";
 import { ObjKindLabels, ObjStateLabels } from "@miu2d/types";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useWasm } from "../../hooks";
 import { buildResourceUrl } from "../../utils";
 
 // ========== 类型定义 ==========
@@ -32,8 +32,7 @@ export function ObjPreview({ gameSlug, obj, resource }: ObjPreviewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number | null>(null);
 
-  // WASM 状态
-  const [wasmReady, setWasmReady] = useState(false);
+  const wasmReady = useWasm();
 
   // 获取实际使用的资源配置（优先使用关联的资源，否则使用 Obj 自身的资源）
   const resources = resource?.resources ?? obj?.resources;
@@ -57,15 +56,6 @@ export function ObjPreview({ gameSlug, obj, resource }: ObjPreviewProps) {
   // 加载状态
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
-
-  // ========== 初始化 WASM ==========
-  useEffect(() => {
-    initWasm()
-      .then(() => setWasmReady(true))
-      .catch((err) => {
-        console.error("Failed to init WASM:", err);
-      });
-  }, []);
 
   // ========== 规范化图像路径 ==========
   const normalizeImagePath = useCallback((imagePath: string | null | undefined): string | null => {

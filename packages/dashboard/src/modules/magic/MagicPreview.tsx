@@ -23,10 +23,10 @@ import {
   normalizeVector,
 } from "@miu2d/engine/utils";
 import { decodeAsfWasm } from "@miu2d/engine/wasm/wasm-asf-decoder";
-import { initWasm } from "@miu2d/engine/wasm/wasm-manager";
 import type { Magic, MagicMoveKind } from "@miu2d/types";
 import { MagicMoveKindLabels, MagicMoveKindValues } from "@miu2d/types";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useWasm } from "../../hooks";
 import { buildResourceUrl } from "../../utils";
 
 // ========== 类型定义 ==========
@@ -64,8 +64,7 @@ export function MagicPreview({ gameSlug, magic, level = 1 }: MagicPreviewProps) 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number | null>(null);
 
-  // WASM 状态
-  const [wasmReady, setWasmReady] = useState(false);
+  const wasmReady = useWasm();
 
   // ASF 数据缓存
   const [flyingAsf, setFlyingAsf] = useState<AsfData | null>(null);
@@ -84,15 +83,6 @@ export function MagicPreview({ gameSlug, magic, level = 1 }: MagicPreviewProps) 
   const spritesRef = useRef<FlyingSprite[]>([]);
   const lastTimeRef = useRef(0);
   const spriteIdRef = useRef(0);
-
-  // ========== 初始化 WASM ==========
-  useEffect(() => {
-    initWasm()
-      .then(() => setWasmReady(true))
-      .catch((err) => {
-        console.error("Failed to init WASM:", err);
-      });
-  }, []);
 
   // ========== 构建资源路径 ==========
   const buildResourcePath = useCallback((fileName: string | null | undefined): string | null => {

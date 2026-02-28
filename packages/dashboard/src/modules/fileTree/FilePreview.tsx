@@ -15,7 +15,6 @@ import type { AsfData } from "@miu2d/engine/resource/format/asf";
 import { parseMap } from "@miu2d/engine/resource/format/map-parser";
 import { parseMMF } from "@miu2d/engine/resource/format/mmf";
 import { decodeAsfWasm } from "@miu2d/engine/wasm/wasm-asf-decoder";
-import { initWasm } from "@miu2d/engine/wasm/wasm-manager";
 import { decodeMpcWasm } from "@miu2d/engine/wasm/wasm-mpc-decoder";
 import { trpc } from "@miu2d/shared";
 import { AsfViewer } from "@miu2d/viewer/components/AsfViewer";
@@ -24,13 +23,14 @@ import { MpcViewer } from "@miu2d/viewer/components/MpcViewer";
 import { XnbAudioViewer } from "@miu2d/viewer/components/XnbAudioViewer";
 import Editor, { loader } from "@monaco-editor/react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useWasm } from "../../hooks";
 import { useDashboard } from "../../DashboardContext";
 import { getResourceRoot } from "../../utils/resourcePath";
 import {
   defineJxqyScriptTheme,
   JXQY_SCRIPT_LANGUAGE_ID,
   registerJxqyScriptLanguage,
-} from "../../lib/monaco/jxqyScriptLanguage";
+} from "@miu2d/shared/lib/monaco/jxqyScriptLanguage";
 import type { FlatFileTreeNode } from "./types";
 import { getFileExtension } from "./types";
 
@@ -134,7 +134,7 @@ export function FilePreview({ file }: FilePreviewProps) {
 
   // ASF 状态
   const [asfData, setAsfData] = useState<AsfData | null>(null);
-  const [wasmReady, setWasmReady] = useState(false);
+  const wasmReady = useWasm();
 
   // MAP 状态
   const [mapData, setMapData] = useState<JxqyMapData | null>(null);
@@ -143,7 +143,6 @@ export function FilePreview({ file }: FilePreviewProps) {
 
   // MPC 状态
   const [mpcData, setMpcData] = useState<Mpc | null>(null);
-  const [mpcWasmReady, setMpcWasmReady] = useState(false);
 
   // XNB 音频状态
   const [xnbData, setXnbData] = useState<ArrayBuffer | null>(null);
@@ -153,18 +152,6 @@ export function FilePreview({ file }: FilePreviewProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const originalContentRef = useRef<string | null>(null);
-
-  // 初始化 WASM
-  useEffect(() => {
-    initWasm()
-      .then(() => {
-        setWasmReady(true);
-        setMpcWasmReady(true);
-      })
-      .catch((err) => {
-        console.error("WASM 初始化失败:", err);
-      });
-  }, []);
 
   // 初始化 Monaco Editor 自定义语言
   useEffect(() => {
@@ -226,7 +213,7 @@ export function FilePreview({ file }: FilePreviewProps) {
         }
         // MPC 文件
         else if (ext === "mpc") {
-          if (!mpcWasmReady) {
+          if (!wasmReady) {
             setError("MPC WASM 解码器尚未初始化");
             return;
           }
@@ -290,7 +277,6 @@ export function FilePreview({ file }: FilePreviewProps) {
   }, [
     file?.id,
     wasmReady,
-    mpcWasmReady,
     file,
     getDownloadUrlMutation.mutateAsync,
     resetPreviewState,

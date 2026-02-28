@@ -15,7 +15,7 @@ import {
   defineJxqyScriptTheme,
   JXQY_SCRIPT_LANGUAGE_ID,
   registerJxqyScriptLanguage,
-} from "../../lib/monaco/jxqyScriptLanguage";
+} from "@miu2d/shared/lib/monaco/jxqyScriptLanguage";
 
 export interface ScriptEditorProps {
   /** 编辑器内容 */

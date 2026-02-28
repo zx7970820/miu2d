@@ -8,6 +8,7 @@
     ".": "./src/index.ts",
     "./i18n": "./src/i18n/index.ts",
     "./locales": "./src/locales/index.ts",
+    "./lib/monaco/jxqyScriptLanguage": "./src/lib/monaco/jxqyScriptLanguage.ts",
     "./*": "./src/*"
   },
   "scripts": {
@@ -33,6 +34,7 @@
     "@biomejs/biome": "^2.3.13",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
+    "monaco-editor": "^0.55.1",
     "typescript": "~5.9.3"
   },
   "peerDependencies": {

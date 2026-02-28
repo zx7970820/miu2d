@@ -10,7 +10,7 @@ import {
   defineJxqyScriptTheme,
   JXQY_SCRIPT_LANGUAGE_ID,
   registerJxqyScriptLanguage,
-} from "../../../lib/monaco/jxqyScriptLanguage";
+} from "@miu2d/shared/lib/monaco/jxqyScriptLanguage";
 
 // 全局标记，确保只初始化一次
 let monacoInitialized = false;

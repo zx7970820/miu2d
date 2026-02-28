@@ -7,32 +7,13 @@
 
 import { getFrameCanvas } from "@miu2d/engine/resource/format/asf";
 import { decodeAsfWasm } from "@miu2d/engine/wasm/wasm-asf-decoder";
-import { initWasm } from "@miu2d/engine/wasm/wasm-manager";
 import { getNpcImageCandidates } from "@miu2d/types";
 import { type ReactNode, useEffect, useRef, useState } from "react";
+import { useWasm } from "../../hooks";
 import { buildResourceUrl } from "../../utils";
 
 // 全局 ASF 图标 dataURL 缓存
 const asfIconCache = new Map<string, string>();
-
-// WASM 初始化状态（全局单例）
-let wasmInitialized = false;
-let wasmInitPromise: Promise<void> | null = null;
-
-async function ensureWasmInit(): Promise<boolean> {
-  if (wasmInitialized) return true;
-  if (!wasmInitPromise) {
-    wasmInitPromise = initWasm()
-      .then(() => {
-        wasmInitialized = true;
-      })
-      .catch((err) => {
-        console.error("[LazyAsfIcon] Failed to init WASM:", err);
-      });
-  }
-  await wasmInitPromise;
-  return wasmInitialized;
-}
 
 export interface LazyAsfIconProps {
   /** ASF 文件名或相对路径（如 "npc001.asf" 或 "asf/character/npc001.asf"） */
@@ -68,6 +49,7 @@ export function LazyAsfIcon({
   const [isVisible, setIsVisible] = useState(false);
   const containerRef = useRef<HTMLSpanElement>(null);
   const loadedKeyRef = useRef<string | null>(null);
+  const wasmReady = useWasm();
 
   const sizeStyle = { width: size, height: size };
 
@@ -130,8 +112,7 @@ export function LazyAsfIcon({
 
     const loadIcon = async () => {
       try {
-        const ready = await ensureWasmInit();
-        if (!ready || cancelled) return;
+        if (!wasmReady || cancelled) return;
 
         for (const resourcePath of candidatePaths) {
           if (cancelled) return;
@@ -171,7 +152,7 @@ export function LazyAsfIcon({
     return () => {
       cancelled = true;
     };
-  }, [isVisible, iconPath, gameSlug, prefix, dataUrl]);
+  }, [isVisible, iconPath, gameSlug, prefix, dataUrl, wasmReady]);
 
   // 已加载 - 显示图标
   if (dataUrl) {
