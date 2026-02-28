@@ -7,19 +7,11 @@
  */
 import type React from "react";
 import { useMemo } from "react";
+import { useGameUIContext } from "../../../contexts";
 import { useAsfImage, useColumnView } from "./hooks";
 import { useBottomStateGuiConfig } from "./useUISettings";
 
-interface BottomStateGuiProps {
-  life: number;
-  maxLife: number;
-  thew: number;
-  maxThew: number;
-  mana: number;
-  maxMana: number;
-  screenWidth: number;
-  screenHeight: number;
-}
+// Props removed — all values are read from GameUIContext
 
 /**
  * ColumnView Component - renders a stat orb with fill based on percentage
@@ -79,16 +71,9 @@ const OverlayImage: React.FC<{ imagePath: string }> = ({ imagePath }) => {
   );
 };
 
-export const BottomStateGui: React.FC<BottomStateGuiProps> = ({
-  life,
-  maxLife,
-  thew,
-  maxThew,
-  mana,
-  maxMana,
-  screenWidth,
-  screenHeight: _screenHeight,
-}) => {
+export const BottomStateGui: React.FC = () => {
+  const { playerVitals, screenWidth } = useGameUIContext();
+  const { life, lifeMax, thew, thewMax, mana, manaMax } = playerVitals;
   // 从 INI 读取配置
   const config = useBottomStateGuiConfig();
 
@@ -96,9 +81,9 @@ export const BottomStateGui: React.FC<BottomStateGuiProps> = ({
   const panelImage = useAsfImage(config?.panel.image ?? null);
 
   // 计算百分比
-  const lifePercent = maxLife > 0 ? Math.max(0, Math.min(1, life / maxLife)) : 0;
-  const thewPercent = maxThew > 0 ? Math.max(0, Math.min(1, thew / maxThew)) : 0;
-  const manaPercent = maxMana > 0 ? Math.max(0, Math.min(1, mana / maxMana)) : 0;
+  const lifePercent = lifeMax > 0 ? Math.max(0, Math.min(1, life / lifeMax)) : 0;
+  const thewPercent = thewMax > 0 ? Math.max(0, Math.min(1, thew / thewMax)) : 0;
+  const manaPercent = manaMax > 0 ? Math.max(0, Math.min(1, mana / manaMax)) : 0;
 
   // 计算面板位置 - 对应中的 Position 计算
   // C# formula: Position = new Vector2(Globals.WindowWidth/2f + leftAdjust, Globals.WindowHeight - height + topAdjust)

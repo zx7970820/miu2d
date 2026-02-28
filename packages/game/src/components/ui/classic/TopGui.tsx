@@ -7,6 +7,7 @@
  */
 import type React from "react";
 import { useCallback, useMemo, useState } from "react";
+import { useGameUIContext } from "../../../contexts";
 import { playUiSound, useAsfImage } from "./hooks";
 import { useTopGuiConfig } from "./useUISettings";
 
@@ -22,16 +23,7 @@ export const BUTTON_TITLES = [
   "系统 (ESC)",
 ];
 
-interface TopGuiProps {
-  screenWidth: number;
-  onStateClick: () => void;
-  onEquipClick: () => void;
-  onXiuLianClick: () => void;
-  onGoodsClick: () => void;
-  onMagicClick: () => void;
-  onMemoClick: () => void;
-  onSystemClick: () => void;
-}
+// Props removed — screenWidth and panel callbacks are read from GameUIContext
 
 /**
  * 单个按钮组件 - 支持 ASF 动画帧（帧0=普通，帧1=按下）
@@ -128,16 +120,8 @@ export const TopButton: React.FC<TopButtonProps> = ({
   );
 };
 
-export const TopGui: React.FC<TopGuiProps> = ({
-  screenWidth,
-  onStateClick,
-  onEquipClick,
-  onXiuLianClick,
-  onGoodsClick,
-  onMagicClick,
-  onMemoClick,
-  onSystemClick,
-}) => {
+export const TopGui: React.FC = () => {
+  const { screenWidth, togglePanel } = useGameUIContext();
   // 从 INI 读取配置
   const config = useTopGuiConfig();
 
@@ -147,23 +131,15 @@ export const TopGui: React.FC<TopGuiProps> = ({
   // 按钮处理器映射
   const handlers: Record<string, () => void> = useMemo(
     () => ({
-      state: onStateClick,
-      equip: onEquipClick,
-      xiulian: onXiuLianClick,
-      goods: onGoodsClick,
-      magic: onMagicClick,
-      memo: onMemoClick,
-      system: onSystemClick,
+      state: () => togglePanel("state"),
+      equip: () => togglePanel("equip"),
+      xiulian: () => togglePanel("xiulian"),
+      goods: () => togglePanel("goods"),
+      magic: () => togglePanel("magic"),
+      memo: () => togglePanel("memo"),
+      system: () => togglePanel("system"),
     }),
-    [
-      onStateClick,
-      onEquipClick,
-      onXiuLianClick,
-      onGoodsClick,
-      onMagicClick,
-      onMemoClick,
-      onSystemClick,
-    ]
+    [togglePanel]
   );
 
   // 计算面板位置

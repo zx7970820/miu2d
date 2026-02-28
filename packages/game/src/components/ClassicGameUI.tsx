@@ -277,16 +277,7 @@ export const ClassicGameUI: React.FC<ClassicGameUIProps> = ({ logic, width, heig
   return (
     <GameUIContext.Provider value={gameUIContextValue}>
       {/* Top GUI */}
-      <TopGui
-        screenWidth={width}
-        onStateClick={() => togglePanel("state")}
-        onEquipClick={() => togglePanel("equip")}
-        onXiuLianClick={() => togglePanel("xiulian")}
-        onGoodsClick={() => togglePanel("goods")}
-        onMagicClick={() => togglePanel("magic")}
-        onMemoClick={() => togglePanel("memo")}
-        onSystemClick={() => togglePanel("system")}
-      />
+      <TopGui />
 
       {/* Partner Heads (队友头像) */}
       {partnersData.length > 0 && (
@@ -310,18 +301,7 @@ export const ClassicGameUI: React.FC<ClassicGameUIProps> = ({ logic, width, heig
       <NpcLifeBar key={npcUpdateKey} npc={hoveredNpc} screenWidth={width} />
 
       {/* Bottom State GUI */}
-      {player && (
-        <BottomStateGui
-          life={player.life}
-          maxLife={player.lifeMax}
-          thew={player.thew}
-          maxThew={player.thewMax}
-          mana={player.mana}
-          maxMana={player.manaMax}
-          screenWidth={width}
-          screenHeight={height}
-        />
-      )}
+      <BottomStateGui />
 
       {/* Bottom GUI */}
       <BottomGui
