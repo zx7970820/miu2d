@@ -187,18 +187,9 @@ export const TopGui: React.FC<TopGuiProps> = ({
     };
   }, [screenWidth, panelImage.width, panelImage.height, config]);
 
-  // 如果面板图片还在加载
+  // 如果面板图片还在加载，不渲染任何内容
   if (panelImage.isLoading) {
-    return (
-      <div
-        style={{
-          ...panelStyle,
-          background: "rgba(40, 60, 90, 0.9)",
-          borderRadius: "0 0 4px 4px",
-          pointerEvents: "none",
-        }}
-      />
-    );
+    return null;
   }
 
   return (

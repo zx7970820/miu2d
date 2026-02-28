@@ -355,21 +355,7 @@ const Slot: React.FC<SlotProps> = ({
         </div>
       )}
 
-      {/* 空槽指示 */}
-      {!goodsData && !magicData && !item && (
-        <div
-          style={{
-            position: "absolute",
-            left: 4,
-            top: 8,
-            right: 4,
-            bottom: 4,
-            border: "1px dashed rgba(255, 255, 255, 0.2)",
-            borderRadius: 2,
-            pointerEvents: "none",
-          }}
-        />
-      )}
+
     </div>
   );
 };
@@ -462,17 +448,9 @@ export const BottomGui: React.FC<BottomGuiProps> = ({
     [onDrop, onDragEnd]
   );
 
-  // 如果面板图片还在加载
+  // 如果面板图片还在加载，不渲染任何内容
   if (panelImage.isLoading) {
-    return (
-      <div
-        style={{
-          ...panelStyle,
-          background: "rgba(30, 50, 80, 0.9)",
-          borderRadius: 4,
-        }}
-      />
-    );
+    return null;
   }
 
   return (

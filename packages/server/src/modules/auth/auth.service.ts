@@ -91,7 +91,6 @@ export class AuthService {
           slug: gameSlug,
           name: gameName,
           description: "默认游戏",
-          ownerId: createdUser.id,
         })
         .returning();
 

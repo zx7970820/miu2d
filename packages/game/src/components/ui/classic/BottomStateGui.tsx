@@ -104,17 +104,9 @@ export const BottomStateGui: React.FC<BottomStateGuiProps> = ({
     };
   }, [screenWidth, panelImage.width, panelImage.height, config]);
 
-  // 如果面板图片还在加载，显示简单的占位
+  // 如果面板图片还在加载，不渲染任何内容
   if (panelImage.isLoading) {
-    return (
-      <div
-        style={{
-          ...panelStyle,
-          background: "rgba(20, 30, 50, 0.8)",
-          borderRadius: 4,
-        }}
-      />
-    );
+    return null;
   }
 
   return (
