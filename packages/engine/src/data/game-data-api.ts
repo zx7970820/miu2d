@@ -154,78 +154,53 @@ export async function fetchGameApiBinary(gameSlug: string, path: string): Promis
   return response.arrayBuffer();
 }
 
-// ========== 共享状态 ==========
+// ==================== 可变状态（集中管理） ====================
 
-let currentGameSlug = "";
+interface GameDataState {
+  /** 当前加载成功的游戏 slug */
+  slug: string;
 
-// ========== 游戏配置缓存 ==========
+  // --- gameConfig ---
+  config: GameConfigResponse | null;
+  isConfigLoaded: boolean;
+  /** 按 slug 隔离的并发锁，防止同 slug 重复请求 */
+  configPromises: Map<string, Promise<void>>;
 
-let cachedGameConfig: GameConfigResponse | null = null;
-let isGameConfigLoadedFlag = false;
-let configLoadingPromise: Promise<void> | null = null;
+  // --- gameData ---
+  data: GameDataResponse | null;
+  isDataLoaded: boolean;
+  /** 按 slug 隔离的并发锁 */
+  dataPromises: Map<string, Promise<void>>;
+
+  // --- levelsData ---
+  levels: LevelResponse | null;
+  isLevelsLoaded: boolean;
+  /** 按 slug 隔离的并发锁 */
+  levelsPromises: Map<string, Promise<void>>;
+}
+
+function createInitialState(): GameDataState {
+  return {
+    slug: "",
+    config: null,
+    isConfigLoaded: false,
+    configPromises: new Map(),
+    data: null,
+    isDataLoaded: false,
+    dataPromises: new Map(),
+    levels: null,
+    isLevelsLoaded: false,
+    levelsPromises: new Map(),
+  };
+}
+
+const state: GameDataState = createInitialState();
 
 /**
- * 从 API 加载游戏全局配置
+ * cacheBuilders 使用 Set 防止 HMR / 重复注册时累积。
+ * 各模块在模块级调用 registerCacheBuilder，函数引用固定，Set 可正确去重。
  */
-export async function loadGameConfig(gameSlug: string, force = false): Promise<void> {
-  if (!force && isGameConfigLoadedFlag && currentGameSlug === gameSlug) {
-    return;
-  }
-
-  if (configLoadingPromise && currentGameSlug === gameSlug) {
-    await configLoadingPromise;
-    return;
-  }
-
-  configLoadingPromise = (async () => {
-    logger.info(`[GameDataApi] Loading game config for ${gameSlug}`);
-
-    try {
-      cachedGameConfig = await fetchGameApi<GameConfigResponse>(gameSlug, "config");
-
-      // 游戏未开放（不存在/未公开/未启用均返回 gameEnabled: false）
-      if (!cachedGameConfig?.gameEnabled) {
-        cachedGameConfig = null;
-        throw new Error("GAME_NOT_AVAILABLE");
-      }
-
-      isGameConfigLoadedFlag = true;
-      currentGameSlug = gameSlug;
-
-      logger.info(
-        `[GameDataApi] Loaded config: playerKey=${cachedGameConfig?.playerKey}, gameName=${cachedGameConfig?.gameName}`
-      );
-    } catch (error) {
-      logger.error(`[GameDataApi] Failed to load game config:`, error);
-      throw error;
-    } finally {
-      configLoadingPromise = null;
-    }
-  })();
-
-  await configLoadingPromise;
-}
-
-export function isGameConfigLoaded(): boolean {
-  return isGameConfigLoadedFlag;
-}
-
-export function getGameConfig(): GameConfigResponse | null {
-  return cachedGameConfig;
-}
-
-// ========== 游戏数据缓存 ==========
-
-let cachedGameData: GameDataResponse | null = null;
-let isGameDataLoadedFlag = false;
-let loadingPromise: Promise<void> | null = null;
-const cacheBuilders: Array<() => void | Promise<void>> = [];
-
-// ========== 等级配置缓存 ==========
-
-let cachedLevelsData: LevelResponse | null = null;
-let isLevelsDataLoadedFlag = false;
-let levelsLoadingPromise: Promise<void> | null = null;
+const cacheBuilders = new Set<() => void | Promise<void>>();
 
 async function runCacheBuilders(): Promise<void> {
   for (const builder of cacheBuilders) {
@@ -234,32 +209,108 @@ async function runCacheBuilders(): Promise<void> {
 }
 
 /**
- * 注册缓存构建回调（数据加载完成后自动调用）
+ * 注册缓存构建回调（数据加载完成后自动调用）。
+ * 使用 Set 保存——相同函数引用重复注册只保留一份。
  */
 export function registerCacheBuilder(builder: () => void | Promise<void>): void {
-  cacheBuilders.push(builder);
+  cacheBuilders.add(builder);
 }
+
+/**
+ * 重置所有游戏数据状态（用于切换游戏 / 单元测试清理）。
+ * 注意：cacheBuilders 不清空——各模块的注册在模块初始化时完成，不随游戏切换变化。
+ */
+export function resetGameData(): void {
+  state.slug = "";
+  state.config = null;
+  state.isConfigLoaded = false;
+  state.configPromises.clear();
+  state.data = null;
+  state.isDataLoaded = false;
+  state.dataPromises.clear();
+  state.levels = null;
+  state.isLevelsLoaded = false;
+  state.levelsPromises.clear();
+  logger.info("[GameDataApi] State reset");
+}
+
+// ========== 游戏配置缓存 ==========
+
+/**
+ * 从 API 加载游戏全局配置
+ */
+export async function loadGameConfig(gameSlug: string, force = false): Promise<void> {
+  if (!force && state.isConfigLoaded && state.slug === gameSlug) {
+    return;
+  }
+
+  const inflight = state.configPromises.get(gameSlug);
+  if (inflight) {
+    await inflight;
+    return;
+  }
+
+  const promise = (async () => {
+    logger.info(`[GameDataApi] Loading game config for ${gameSlug}`);
+
+    try {
+      const config = await fetchGameApi<GameConfigResponse>(gameSlug, "config");
+
+      // 游戏未开放（不存在/未公开/未启用均返回 gameEnabled: false）
+      if (!config?.gameEnabled) {
+        throw new Error("GAME_NOT_AVAILABLE");
+      }
+
+      state.config = config;
+      state.isConfigLoaded = true;
+      state.slug = gameSlug;
+
+      logger.info(
+        `[GameDataApi] Loaded config: playerKey=${state.config.playerKey}, gameName=${state.config.gameName}`
+      );
+    } catch (error) {
+      logger.error(`[GameDataApi] Failed to load game config:`, error);
+      throw error;
+    } finally {
+      state.configPromises.delete(gameSlug);
+    }
+  })();
+
+  state.configPromises.set(gameSlug, promise);
+  await promise;
+}
+
+export function isGameConfigLoaded(): boolean {
+  return state.isConfigLoaded;
+}
+
+export function getGameConfig(): GameConfigResponse | null {
+  return state.config;
+}
+
+// ========== 游戏数据缓存 ==========
 
 /**
  * 从 API 加载所有游戏数据
  */
 export async function loadGameData(gameSlug: string, force = false): Promise<void> {
-  if (!force && isGameDataLoadedFlag && currentGameSlug === gameSlug) {
+  if (!force && state.isDataLoaded && state.slug === gameSlug) {
     return;
   }
 
-  if (loadingPromise && currentGameSlug === gameSlug) {
-    await loadingPromise;
+  const inflight = state.dataPromises.get(gameSlug);
+  if (inflight) {
+    await inflight;
     return;
   }
 
-  loadingPromise = (async () => {
+  const promise = (async () => {
     logger.info(`[GameDataApi] Loading game data for ${gameSlug}`);
 
     try {
-      cachedGameData = await fetchGameApi<GameDataResponse>(gameSlug, "data");
-      isGameDataLoadedFlag = true;
-      currentGameSlug = gameSlug;
+      state.data = await fetchGameApi<GameDataResponse>(gameSlug, "data");
+      state.isDataLoaded = true;
+      state.slug = gameSlug;
 
       try {
         await loadLevelsData(gameSlug, force, false);
@@ -271,15 +322,15 @@ export async function loadGameData(gameSlug: string, force = false): Promise<voi
       await runCacheBuilders();
 
       const magicCount =
-        (cachedGameData?.magics.player.length ?? 0) + (cachedGameData?.magics.npc.length ?? 0);
-      const goodsCount = cachedGameData?.goods.length ?? 0;
-      const shopCount = cachedGameData?.shops.length ?? 0;
-      const npcCount = cachedGameData?.npcs.npcs.length ?? 0;
-      const npcResCount = cachedGameData?.npcs.resources.length ?? 0;
-      const objCount = cachedGameData?.objs.objs.length ?? 0;
-      const objResCount = cachedGameData?.objs.resources.length ?? 0;
-      const portraitCount = cachedGameData?.portraits?.length ?? 0;
-      const talkCount = cachedGameData?.talks?.length ?? 0;
+        (state.data.magics.player.length ?? 0) + (state.data.magics.npc.length ?? 0);
+      const goodsCount = state.data.goods.length ?? 0;
+      const shopCount = state.data.shops.length ?? 0;
+      const npcCount = state.data.npcs.npcs.length ?? 0;
+      const npcResCount = state.data.npcs.resources.length ?? 0;
+      const objCount = state.data.objs.objs.length ?? 0;
+      const objResCount = state.data.objs.resources.length ?? 0;
+      const portraitCount = state.data.portraits?.length ?? 0;
+      const talkCount = state.data.talks?.length ?? 0;
 
       logger.info(
         `[GameDataApi] Loaded: ${magicCount} magics, ${goodsCount} goods, ${shopCount} shops, ${npcCount} npcs, ${npcResCount} npcres, ${objCount} objs, ${objResCount} objres, ${portraitCount} portraits, ${talkCount} talks`
@@ -288,11 +339,12 @@ export async function loadGameData(gameSlug: string, force = false): Promise<voi
       logger.error(`[GameDataApi] Failed to load game data:`, error);
       throw error;
     } finally {
-      loadingPromise = null;
+      state.dataPromises.delete(gameSlug);
     }
   })();
 
-  await loadingPromise;
+  state.dataPromises.set(gameSlug, promise);
+  await promise;
 }
 
 export async function reloadGameData(gameSlug: string): Promise<void> {
@@ -305,9 +357,9 @@ export async function reloadGameData(gameSlug: string): Promise<void> {
  * 注入后会自动运行 cacheBuilders，使各模块缓存就绪
  */
 export async function setGameData(gameSlug: string, data: GameDataResponse): Promise<void> {
-  cachedGameData = data;
-  isGameDataLoadedFlag = true;
-  currentGameSlug = gameSlug;
+  state.data = data;
+  state.isDataLoaded = true;
+  state.slug = gameSlug;
 
   await runCacheBuilders();
 
@@ -320,46 +372,46 @@ export async function setGameData(gameSlug: string, data: GameDataResponse): Pro
 }
 
 export function isGameDataLoaded(): boolean {
-  return isGameDataLoadedFlag;
+  return state.isDataLoaded;
 }
 
 /**
  * 获取当前游戏 slug
  */
 export function getGameSlug(): string {
-  return currentGameSlug;
+  return state.slug;
 }
 
 export function getMagicsData(): MagicResponse | null {
-  return cachedGameData?.magics ?? null;
+  return state.data?.magics ?? null;
 }
 
 export function getGoodsData(): Good[] | null {
-  return cachedGameData?.goods ?? null;
+  return state.data?.goods ?? null;
 }
 
 export function getNpcsData(): NpcResponse | null {
-  return cachedGameData?.npcs ?? null;
+  return state.data?.npcs ?? null;
 }
 
 export function getObjsData(): ObjResponse | null {
-  return cachedGameData?.objs ?? null;
+  return state.data?.objs ?? null;
 }
 
 export function getShopsData(): Shop[] | null {
-  return cachedGameData?.shops ?? null;
+  return state.data?.shops ?? null;
 }
 
 export function getPlayersData(): Player[] | null {
-  return cachedGameData?.players ?? null;
+  return state.data?.players ?? null;
 }
 
 export function getPortraitsData(): Array<{ index: number; asfFile: string }> | null {
-  return cachedGameData?.portraits ?? null;
+  return state.data?.portraits ?? null;
 }
 
 export function getTalksData(): Array<{ id: number; portraitIndex: number; text: string }> | null {
-  return cachedGameData?.talks ?? null;
+  return state.data?.talks ?? null;
 }
 
 /**
@@ -370,25 +422,26 @@ export async function loadLevelsData(
   force = false,
   rebuildCaches = true
 ): Promise<void> {
-  if (!force && isLevelsDataLoadedFlag && currentGameSlug === gameSlug) {
+  if (!force && state.isLevelsLoaded && state.slug === gameSlug) {
     return;
   }
 
-  if (levelsLoadingPromise && currentGameSlug === gameSlug) {
-    await levelsLoadingPromise;
+  const inflight = state.levelsPromises.get(gameSlug);
+  if (inflight) {
+    await inflight;
     return;
   }
 
-  levelsLoadingPromise = (async () => {
+  const promise = (async () => {
     logger.info(`[GameDataApi] Loading levels data for ${gameSlug}`);
 
     try {
-      cachedLevelsData = await fetchGameApi<LevelResponse>(gameSlug, "level");
-      isLevelsDataLoadedFlag = true;
-      currentGameSlug = gameSlug;
+      state.levels = await fetchGameApi<LevelResponse>(gameSlug, "level");
+      state.isLevelsLoaded = true;
+      state.slug = gameSlug;
 
-      const playerCount = cachedLevelsData?.player.length ?? 0;
-      const npcCount = cachedLevelsData?.npc.length ?? 0;
+      const playerCount = state.levels.player.length ?? 0;
+      const npcCount = state.levels.npc.length ?? 0;
       logger.info(`[GameDataApi] Loaded levels: ${playerCount} player, ${npcCount} npc`);
 
       if (rebuildCaches) {
@@ -398,19 +451,20 @@ export async function loadLevelsData(
       logger.error(`[GameDataApi] Failed to load levels data:`, error);
       throw error;
     } finally {
-      levelsLoadingPromise = null;
+      state.levelsPromises.delete(gameSlug);
     }
   })();
 
-  await levelsLoadingPromise;
+  state.levelsPromises.set(gameSlug, promise);
+  await promise;
 }
 
 export function isLevelsDataLoaded(): boolean {
-  return isLevelsDataLoadedFlag;
+  return state.isLevelsLoaded;
 }
 
 export function getLevelsData(): LevelResponse | null {
-  return cachedLevelsData;
+  return state.levels;
 }
 
 /**
@@ -420,14 +474,14 @@ export async function loadSceneNpcEntries(
   sceneKey: string,
   fileName: string
 ): Promise<Record<string, unknown>[] | null> {
-  if (!currentGameSlug) {
+  if (!state.slug) {
     logger.warn(`[GameDataApi] loadSceneNpcEntries failed: game slug is empty`);
     return null;
   }
 
   try {
     return await fetchGameApi<Record<string, unknown>[]>(
-      currentGameSlug,
+      state.slug,
       `scenes/npc/${encodeURIComponent(sceneKey)}/${encodeURIComponent(fileName)}`
     );
   } catch {
@@ -439,14 +493,14 @@ export async function loadSceneNpcEntries(
  * 从 Scene API 加载 MMF 地图二进制数据
  */
 export async function loadSceneMapMmf(sceneKey: string): Promise<ArrayBuffer | null> {
-  if (!currentGameSlug) {
+  if (!state.slug) {
     logger.warn(`[GameDataApi] loadSceneMapMmf failed: game slug is empty`);
     return null;
   }
 
   try {
     const buffer = await fetchGameApiBinary(
-      currentGameSlug,
+      state.slug,
       `scenes/${encodeURIComponent(sceneKey)}/mmf`
     );
     return buffer.byteLength > 0 ? buffer : null;
@@ -462,14 +516,14 @@ export async function loadSceneObjEntries(
   sceneKey: string,
   fileName: string
 ): Promise<Record<string, unknown>[] | null> {
-  if (!currentGameSlug) {
+  if (!state.slug) {
     logger.warn(`[GameDataApi] loadSceneObjEntries failed: game slug is empty`);
     return null;
   }
 
   try {
     return await fetchGameApi<Record<string, unknown>[]>(
-      currentGameSlug,
+      state.slug,
       `scenes/obj/${encodeURIComponent(sceneKey)}/${encodeURIComponent(fileName)}`
     );
   } catch {
