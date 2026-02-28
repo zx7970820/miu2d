@@ -6,7 +6,7 @@
 </p>
 
 <p align="center">
-  <b>A from-scratch 2D RPG engine — raw WebGL, zero game-framework dependencies</b>
+  <b>A from-scratch 2D ARPG engine — raw WebGL, zero game-framework dependencies</b>
 </p>
 
 <p align="center">
@@ -15,7 +15,7 @@
 
 ---
 
-Miu2D is a **160,000-line** 2D RPG engine written in TypeScript and Rust, rendering through **raw WebGL** with no dependency on Unity, Godot, Phaser, PixiJS, or any other game framework. Every subsystem — sprite batching, A* pathfinding, binary format decoders, scripting VM, weather particles, screen effects — is implemented from first principles.
+Miu2D is a **160,000-line** 2D ARPG engine written in TypeScript and Rust, rendering through **raw WebGL** with no dependency on Unity, Godot, Phaser, PixiJS, or any other game framework. Every subsystem — sprite batching, A* pathfinding, binary format decoders, scripting VM, weather particles, screen effects — is implemented from first principles.
 
 As a proof of concept, Miu2D has been used to rebuild **three classic Kingsoft (西山居) wuxia RPGs**, all fully playable in any modern browser.
 
@@ -96,30 +96,17 @@ Most web game projects reach for PixiJS, Phaser, or a WASM-compiled Unity/Godot 
 
 ## Architecture at a Glance
 
-```
- ┌────────────────────────────────────────────────────────────────┐
- │  React 19 UI Layer (3 themes: Classic / Modern / Mobile)      │
- │  31,174 LOC · 29 Classic + 20 Modern + 7 Mobile components   │
- ├────────────────────────────────────────────────────────────────┤
- │  @miu2d/engine — Pure TypeScript, no React dependency         │
- │  59,342 LOC · 213 source files · 19 sub-modules               │
- │  ┌──────────┬────────────┬───────────┬──────────────────────┐ │
- │  │ Renderer │  Script VM │ Character │ Magic (22 MoveKinds) │ │
- │  │ WebGL +  │  182 cmds  │ 7-level   │ projectile, AoE,    │ │
- │  │ Canvas2D │  parser +  │ hierarchy │ homing, summon,      │ │
- │  │ fallback │  executor  │ + NPC AI  │ teleport, time-stop  │ │
- │  └──────────┴────────────┴───────────┴──────────────────────┘ │
- ├────────────────────────────────────────────────────────────────┤
- │  @miu2d/engine-wasm — Rust → WebAssembly (2,644 LOC)         │
- │  A* pathfinder · ASF/MPC/MSF decoders · SpatialHash · zstd   │
- ├────────────────────────────────────────────────────────────────┤
- │  @miu2d/server — Hono + tRPC + Drizzle ORM (13,700 LOC)      │
- │  22 PostgreSQL tables · 17 type-safe tRPC routers             │
- ├────────────────────────────────────────────────────────────────┤
- │  @miu2d/dashboard — Full game data editor (34,731 LOC)        │
- │  VS Code-style layout · 13 editing modules                    │
- └────────────────────────────────────────────────────────────────┘
-```
+| Layer | Package | LOC | Details |
+|---|---|---:|---|
+| **UI** | `@miu2d/game` | 31,174 | React 19 · 3 themes (Classic / Modern / Mobile) · 56 components |
+| **Engine** | `@miu2d/engine` | 59,342 | Pure TypeScript · 213 files · 19 modules · no React dependency |
+| ↳ Renderer | `renderer/` | 2,838 | Raw WebGL · SpriteBatcher · Canvas2D fallback · GLSL filters |
+| ↳ Script VM | `script/` | 5,879 | 182 commands · custom parser + async executor |
+| ↳ Character | `character/` | 6,415 | 7-level inheritance chain · NPC AI · bezier movement |
+| ↳ Magic | `magic/` | 8,702 | 22 MoveKind trajectories · 10 SpecialKind effects |
+| **WASM** | `@miu2d/engine-wasm` | 2,644 | Rust → WebAssembly · A\* pathfinder · decoders · SpatialHash · zstd |
+| **Backend** | `@miu2d/server` | 13,700 | Hono + tRPC + Drizzle ORM · 22 PostgreSQL tables · 17 routers |
+| **Editor** | `@miu2d/dashboard` | 34,731 | VS Code-style layout · 13 editing modules |
 
 ### Tech Stack
 
@@ -371,15 +358,26 @@ make dev            # web + server + db studio concurrently
 
 ## Controls
 
+### Desktop
+
 | Input | Action |
-|-------|--------|
-| Arrow keys / Click | Move |
-| Shift + Move | Run |
-| Space / Enter | Interact / Confirm |
-| Esc | Cancel / System menu |
-| 1–9 | Quick-bar skills |
-| **Mobile**: Virtual joystick | Move |
-| **Mobile**: Tap | Interact |
+|---|---|
+| Left click (ground) | Move to position |
+| Left click (NPC / object) | Interact |
+| Right click (NPC / object) | Alternate interact |
+| Ctrl + Left click | Attack in place |
+| `Q` | Interact with nearest object |
+| `E` | Interact with nearest NPC |
+| `A` `S` `D` `F` `G` | Cast magic (skill slots 1 – 5) |
+| `Z` `X` `C` | Use item (quick slots 1 – 3) |
+| `V` | Toggle sitting / meditate (修炼) |
+
+### Mobile
+
+| Input | Action |
+|---|---|
+| Virtual joystick | Move |
+| Tap (NPC / object) | Interact |
 
 ---
 
