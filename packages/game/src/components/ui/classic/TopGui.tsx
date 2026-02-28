@@ -7,7 +7,7 @@
  */
 import type React from "react";
 import { useCallback, useMemo, useState } from "react";
-import { useAsfImage } from "./hooks";
+import { playUiSound, useAsfImage } from "./hooks";
 import { useTopGuiConfig } from "./useUISettings";
 
 // Button IDs in order matching C#: State, Equip, XiuLian, Goods, Magic, Memo, System
@@ -44,6 +44,7 @@ export interface TopButtonProps {
   width: number;
   height: number;
   title: string;
+  sound?: string;
   onClick: () => void;
 }
 
@@ -54,6 +55,7 @@ export const TopButton: React.FC<TopButtonProps> = ({
   width,
   height,
   title,
+  sound,
   onClick,
 }) => {
   const [isPressed, setIsPressed] = useState(false);
@@ -79,7 +81,8 @@ export const TopButton: React.FC<TopButtonProps> = ({
 
   const handleMouseEnter = useCallback(() => {
     setIsHovered(true);
-  }, []);
+    if (sound) playUiSound(sound);
+  }, [sound]);
 
   const handleClick = useCallback(() => {
     onClick();
@@ -221,6 +224,7 @@ export const TopGui: React.FC<TopGuiProps> = ({
           width={btn.width}
           height={btn.height}
           title={BUTTON_TITLES[i]}
+          sound={btn.sound}
           onClick={handlers[BUTTON_IDS[i]]}
         />
       ))}

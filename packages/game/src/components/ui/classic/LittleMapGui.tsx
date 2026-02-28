@@ -29,7 +29,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 // 统一楷体字体
 const KAITI_FONT = '"STKaiti", "楷体", "KaiTi", "SimKai", serif';
 
-import { type AsfAnimationData, useAsfAnimation, useAsfImage } from "./hooks";
+import { type AsfAnimationData, playUiSound, useAsfAnimation, useAsfImage } from "./hooks";
 import { useLittleMapGuiConfig } from "./useUISettings";
 
 // Constants
@@ -67,6 +67,7 @@ interface MapButtonProps {
   imagePath: string;
   left: number;
   top: number;
+  sound?: string;
   onClick: () => void;
   onMouseDown?: () => void;
   onMouseUp?: () => void;
@@ -76,6 +77,7 @@ const MapButton: React.FC<MapButtonProps> = ({
   imagePath,
   left,
   top,
+  sound,
   onClick,
   onMouseDown,
   onMouseUp,
@@ -108,6 +110,7 @@ const MapButton: React.FC<MapButtonProps> = ({
       onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
+      onMouseEnter={() => { if (sound) playUiSound(sound); }}
     >
       {currentImage.dataUrl && (
         <img
@@ -605,30 +608,35 @@ export const LittleMapGui: React.FC<LittleMapGuiProps> = ({
         imagePath={config.leftBtn.image}
         left={config.leftBtn.left}
         top={config.leftBtn.top}
+        sound={config.leftBtn.sound}
         onClick={moveLeft}
       />
       <MapButton
         imagePath={config.rightBtn.image}
         left={config.rightBtn.left}
         top={config.rightBtn.top}
+        sound={config.rightBtn.sound}
         onClick={moveRight}
       />
       <MapButton
         imagePath={config.upBtn.image}
         left={config.upBtn.left}
         top={config.upBtn.top}
+        sound={config.upBtn.sound}
         onClick={moveUp}
       />
       <MapButton
         imagePath={config.downBtn.image}
         left={config.downBtn.left}
         top={config.downBtn.top}
+        sound={config.downBtn.sound}
         onClick={moveDown}
       />
       <MapButton
         imagePath={config.closeBtn.image}
         left={config.closeBtn.left}
         top={config.closeBtn.top}
+        sound={config.closeBtn.sound}
         onClick={onClose}
       />
 

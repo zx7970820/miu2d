@@ -21,7 +21,7 @@ import type { Good } from "@miu2d/engine/player/goods";
 import type React from "react";
 import { useCallback, useMemo, useState } from "react";
 import { AsfAnimatedSprite } from "./AsfAnimatedSprite";
-import { useAsfImage } from "./hooks";
+import { playUiSound, useAsfImage } from "./hooks";
 import { ScrollBar } from "./ScrollBar";
 import { useBuySellGuiConfig } from "./useUISettings";
 
@@ -275,6 +275,7 @@ export const BuyGui: React.FC<BuyGuiProps> = ({
           cursor: "pointer",
         }}
         onClick={onClose}
+        onMouseEnter={() => { if (config.closeBtn.sound) playUiSound(config.closeBtn.sound); }}
       >
         <AsfAnimatedSprite path={config.closeBtn.image} autoPlay={false} loop={false} />
       </div>

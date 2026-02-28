@@ -401,7 +401,7 @@ class ResourceLoaderImpl {
       let audioBuffer: AudioBuffer;
 
       // 检查是否是 XNB 格式
-      if (path.toLowerCase().endsWith(".xnb")) {
+      if (/\.xnb$/i.test(path)) {
         // XNB 格式：使用自定义解析器
         const xnbResult = parseXnbAudio(arrayBuffer);
         if (!xnbResult.success || !xnbResult.data) {

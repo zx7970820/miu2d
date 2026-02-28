@@ -8,8 +8,8 @@
 
 import type { ButtonConfig } from "@miu2d/engine/gui/ui-settings";
 import type React from "react";
-import { useMemo, useState } from "react";
-import { useAsfImage } from "./hooks";
+import { useCallback, useMemo, useState } from "react";
+import { playUiSound, useAsfImage } from "./hooks";
 import { useSystemGuiConfig } from "./useUISettings";
 
 interface SystemGuiProps {
@@ -41,6 +41,11 @@ const SystemButton: React.FC<SystemButtonProps> = ({ config, onClick }) => {
 
   const currentImage = isPressed && pressedImage.dataUrl ? pressedImage : normalImage;
 
+  const handleMouseEnter = useCallback(() => {
+    setIsHovered(true);
+    if (config.sound) playUiSound(config.sound);
+  }, [config.sound]);
+
   return (
     <div
       style={{
@@ -55,7 +60,7 @@ const SystemButton: React.FC<SystemButtonProps> = ({ config, onClick }) => {
       }}
       onMouseDown={() => setIsPressed(true)}
       onMouseUp={() => setIsPressed(false)}
-      onMouseEnter={() => setIsHovered(true)}
+      onMouseEnter={handleMouseEnter}
       onMouseLeave={() => {
         setIsPressed(false);
         setIsHovered(false);

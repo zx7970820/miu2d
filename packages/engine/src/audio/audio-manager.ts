@@ -167,7 +167,8 @@ export class AudioManager {
 
   /** 加载音频 buffer，优先 .xnb 格式，失败回退原始格式 */
   private async loadAudioBuffer(soundPath: string): Promise<AudioBuffer | null> {
-    if (!soundPath.toLowerCase().endsWith(".xnb")) {
+    const isXnbFormat = /\.xnb$/i.test(soundPath);
+    if (!isXnbFormat) {
       const xnbPath = soundPath.replace(/\.(wav|mp3|ogg)$/i, ".xnb");
       const buffer = await resourceLoader.loadAudio(xnbPath);
       if (buffer) return buffer;

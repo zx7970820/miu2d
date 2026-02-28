@@ -12,7 +12,7 @@ import { getResourceRoot, getResourceUrl } from "@miu2d/engine/resource";
 import type { ButtonConfig, TitleGuiConfig } from "@miu2d/engine/gui/ui-settings";
 import type React from "react";
 import { useCallback, useEffect, useInsertionEffect, useMemo, useRef, useState } from "react";
-import { getAsfFrameDataUrl, useAsfImage } from "./hooks";
+import { getAsfFrameDataUrl, playUiSound, useAsfImage } from "./hooks";
 import { useTitleGuiConfig } from "./useUISettings";
 
 // ================================================================
@@ -65,19 +65,9 @@ const AsfButton: React.FC<{
     return getAsfFrameDataUrl(hoverAsf, 1);
   }, [hoverAsf]);
 
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-
   const handleMouseEnter = useCallback(() => {
     setHovered(true);
-    if (config.sound && !audioRef.current) {
-      const audio = new Audio(getResourceUrl(`${getResourceRoot()}/content/sound/${config.sound}`));
-      audio.volume = 0.6;
-      audioRef.current = audio;
-      audio.play().catch(() => {});
-      audio.onended = () => {
-        audioRef.current = null;
-      };
-    }
+    if (config.sound) playUiSound(config.sound);
   }, [config.sound]);
 
   const displayUrl = hovered && hoverDataUrl ? hoverDataUrl : normalFrame.dataUrl;

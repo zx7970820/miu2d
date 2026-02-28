@@ -10,3 +10,4 @@ export {
   useColumnView,
   useMultipleAsfImages,
 } from "./useAsfImage";
+export { playUiSound } from "./playUiSound";
