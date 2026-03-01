@@ -9,7 +9,7 @@
  */
 
 import { logger } from "@miu2d/engine/core/logger";
-import { getResourceRoot, getResourceUrl } from "@miu2d/engine/resource";
+import { ResourcePath, getResourceRoot, getResourceUrl } from "@miu2d/engine/resource";
 import type { ButtonConfig, TitleGuiConfig } from "@miu2d/engine/gui/ui-settings";
 import type React from "react";
 import { useCallback, useEffect, useInsertionEffect, useMemo, useRef, useState } from "react";
@@ -170,10 +170,11 @@ const ClassicTitle: React.FC<TitleGuiProps & { config: TitleGuiConfig }> = ({
     };
   }, [bgSize, containerSize, config.leftAdjust, config.topAdjust]);
 
-  // 制作人员按钮点击：构建视频 URL 并展示
+  // 制作人员按钮点击：有 creditsVideo 配置则用配置，否则默认 content/video/team.webm
   const handleCreditsClick = useCallback(() => {
-    if (!config.creditsVideo) return;
-    const url = getResourceUrl(`${getResourceRoot()}/${config.creditsVideo}`);
+    const url = config.creditsVideo
+      ? getResourceUrl(`${getResourceRoot()}/${config.creditsVideo}`)
+      : getResourceUrl(ResourcePath.video("team.webm"));
     setCreditsVideoUrl(url);
   }, [config.creditsVideo]);
 
@@ -256,10 +257,10 @@ const ClassicTitle: React.FC<TitleGuiProps & { config: TitleGuiConfig }> = ({
             offsetLeft={offsetLeft}
             offsetTop={offsetTop}
           />
-          {/* teamBtn 无论如何渲染：有 creditsVideo 则播视频，否则回调 onTeam */}
+          {/* teamBtn 始终渲染，点击播放制作人员视频 */}
           <AsfButton
             config={config.teamBtn}
-            onClick={config.creditsVideo ? handleCreditsClick : (onTeam ?? (() => {}))}
+            onClick={handleCreditsClick}
             scale={scale}
             offsetLeft={offsetLeft}
             offsetTop={offsetTop}
