@@ -21,11 +21,11 @@ const db = drizzle(pool);
 async function main() {
   console.log("==> rehash-passwords: fetching users …");
 
-  const rows: Array<{ id: string; passwordHash: string }> = await pool
-    .query("SELECT id, \"passwordHash\" FROM users")
-    .then((r) => r.rows as Array<{ id: string; passwordHash: string }>);
+  const rows: Array<{ id: string; password_hash: string }> = await pool
+    .query('SELECT id, password_hash FROM users')
+    .then((r) => r.rows as Array<{ id: string; password_hash: string }>);
 
-  const plaintext = rows.filter((u) => !isBcryptHash(u.passwordHash));
+  const plaintext = rows.filter((u) => !isBcryptHash(u.password_hash));
   console.log(`    total users: ${rows.length}, plaintext passwords: ${plaintext.length}`);
 
   if (plaintext.length === 0) {
@@ -36,8 +36,8 @@ async function main() {
 
   let updated = 0;
   for (const user of plaintext) {
-    const hashed = await hashPassword(user.passwordHash);
-    await pool.query('UPDATE users SET "passwordHash" = $1 WHERE id = $2', [hashed, user.id]);
+    const hashed = await hashPassword(user.password_hash);
+    await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [hashed, user.id]);
     updated += 1;
     if (updated % 10 === 0) {
       console.log(`    rehashed ${updated}/${plaintext.length} …`);
