@@ -1,55 +1,18 @@
 /**
- * 英文翻译资源
+ * 服务端英文翻译资源
+ *
+ * 仅包含服务端 getMessage() 实际用到的 errors.* 键。
+ * 前端翻译使用 react-i18next，参见 ../i18n/index.ts
  */
 import type { TranslationSchema } from "./zh.js";
 
 export const en: TranslationSchema = {
   translation: {
-    brand: "Miu2D Engine",
-    nav: {
-      features: "Features",
-      demo: "Demo",
-      docs: "Docs",
-      github: "GitHub",
-      games: "Games",
-      login: "Sign in",
-      register: "Sign up",
-      dashboard: "Dashboard",
-    },
-    auth: {
-      login: {
-        title: "Sign in to Miu2D",
-        email: "Email",
-        password: "Password",
-        submit: "Sign in",
-        loading: "Signing in...",
-        noAccount: "Don't have an account?",
-        toRegister: "Sign up",
-      },
-      register: {
-        title: "Sign up for Miu2D",
-        name: "Username",
-        email: "Email",
-        password: "Password",
-        confirmPassword: "Confirm Password",
-        submit: "Sign up",
-        loading: "Signing up...",
-        hasAccount: "Already have an account?",
-        toLogin: "Sign in",
-      },
-      logout: "Sign out",
-    },
-    game: {
-      title: "Games",
-      create: "Create Game",
-      myGames: "My Games",
-      noGames: "No games yet",
-    },
     errors: {
       common: {
         unauthorized: "Not logged in",
         forbidden: "No permission to access",
-        requestFailed: "Request failed",
+        notFound: "Resource not found",
         missingGame: "Missing game parameter",
         gameForbidden: "No permission to access this game",
       },
@@ -57,7 +20,6 @@ export const en: TranslationSchema = {
         invalidCredentials: "Invalid email or password",
         defaultGameNotFound: "Default game not found",
         emailAlreadyRegistered: "Email already registered",
-        passwordMismatch: "Passwords do not match",
       },
       user: {
         notFound: "User not found",
@@ -92,18 +54,15 @@ export const en: TranslationSchema = {
         itemNotFound: "Scene item not found",
         keyConflict: "Scene key already exists",
       },
-    },
-    footer: {
-      copyright: "© 2026 Miu2D Engine. All rights reserved.",
-      tagline: "AI-powered 2D RPG Game Engine",
-      about: "About",
-    },
-    pwa: {
-      updateMessage: "Game engine updated. Refresh to get the latest version.",
-      updateButton: "Refresh now",
-      dismissButton: "Dismiss",
-      installMessage: "Add \"{{gameName}}\" to your home screen for quick access!",
-      installButton: "Add to Home Screen",
+      goods: {
+        notFound: "Item not found",
+      },
+      npc: {
+        notFound: "NPC not found",
+      },
+      obj: {
+        notFound: "Object not found",
+      },
     },
   },
 };

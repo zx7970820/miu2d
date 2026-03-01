@@ -23,6 +23,7 @@
     "monaco-editor": "^0.55.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-i18next": "^16.5.4",
     "react-router-dom": "^7.13.0"
   },
   "devDependencies": {

@@ -1,21 +1,29 @@
 /**
  * i18n 配置 - 使用 react-i18next
+ *
+ * 翻译文件按语言 + 模块拆分：
+ *   locales/{lang}/common.json  —— nav / auth / settings / errors / footer / notFound / lang / pwa
+ *   locales/{lang}/landing.json —— hero / mobile / demo / features / techStack / ... (首页专用)
  */
 
 import i18n from "i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
 import { initReactI18next } from "react-i18next";
-import en from "./locales/en.json";
-import ja from "./locales/ja.json";
-import zh from "./locales/zh.json";
+
+import enCommon from "./locales/en/common.json";
+import enLanding from "./locales/en/landing.json";
+import jaCommon from "./locales/ja/common.json";
+import jaLanding from "./locales/ja/landing.json";
+import zhCommon from "./locales/zh/common.json";
+import zhLanding from "./locales/zh/landing.json";
 
 export const supportedLanguages = ["zh", "en", "ja"] as const;
 export type Locale = (typeof supportedLanguages)[number];
 
 const resources = {
-  zh: { translation: zh },
-  en: { translation: en },
-  ja: { translation: ja },
+  zh: { translation: { ...zhCommon, ...zhLanding } },
+  en: { translation: { ...enCommon, ...enLanding } },
+  ja: { translation: { ...jaCommon, ...jaLanding } },
 };
 
 i18n

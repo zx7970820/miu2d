@@ -1,0 +1,103 @@
+{
+  "pwa": {
+    "updateMessage": "游戏引擎已更新，刷新以获取最新版本",
+    "updateButton": "立即刷新",
+    "dismissButton": "关闭",
+    "installMessage": "添加到桌面，随时畅玩！",
+    "installButton": "添加桌面"
+  },
+  "lang": {
+    "zh": "简体中文",
+    "en": "English",
+    "ja": "日本語"
+  },
+  "settings": {
+    "title": "账号设置",
+    "profile": "个人资料",
+    "avatar": "头像",
+    "name": "昵称",
+    "email": "邮箱",
+    "save": "保存",
+    "saving": "保存中...",
+    "saved": "已保存",
+    "cancel": "取消",
+    "changePassword": "修改密码",
+    "currentPassword": "当前密码",
+    "newPassword": "新密码",
+    "confirmNewPassword": "确认新密码",
+    "passwordChanged": "密码修改成功",
+    "language": "语言",
+    "theme": "主题",
+    "themeLight": "浅色",
+    "themeDark": "深色",
+    "themeAuto": "跟随系统",
+    "langAuto": "跟随系统",
+    "dangerZone": "危险操作",
+    "deleteAvatar": "删除头像",
+    "deleteAvatarConfirm": "确定删除头像？",
+    "namePlaceholder": "输入你的昵称",
+    "emailPlaceholder": "输入你的邮箱",
+    "passwordPlaceholder": "至少 4 个字符"
+  },
+  "nav": {
+    "features": "功能特性",
+    "demo": "在线演示",
+    "docs": "文档",
+    "github": "GitHub",
+    "login": "登录",
+    "register": "注册"
+  },
+  "auth": {
+    "login": {
+      "title": "登录 Miu2D",
+      "subtitle": "欢迎回来，继续你的冒险旅程",
+      "email": "邮箱",
+      "password": "密码",
+      "submit": "登录",
+      "loading": "登录中...",
+      "noAccount": "没有账号？",
+      "toRegister": "立即注册"
+    },
+    "register": {
+      "title": "注册 Miu2D",
+      "subtitle": "加入我们，开启你的武侠之旅",
+      "name": "用户名",
+      "email": "邮箱",
+      "password": "密码",
+      "confirmPassword": "确认密码",
+      "submit": "注册",
+      "loading": "注册中...",
+      "hasAccount": "已有账号？",
+      "toLogin": "立即登录"
+    },
+    "logout": "退出登录"
+  },
+  "errors": {
+    "auth": {
+      "invalidCredentials": "账号或密码错误",
+      "emailAlreadyRegistered": "邮箱已注册",
+      "passwordMismatch": "两次密码不一致"
+    },
+    "common": {
+      "unauthorized": "请先登录",
+      "forbidden": "没有权限执行此操作",
+      "notFound": "资源不存在",
+      "badRequest": "请求参数错误",
+      "serverError": "服务器错误，请稍后重试",
+      "networkError": "网络连接失败，请检查网络",
+      "unknownError": "发生未知错误",
+      "operationFailed": "操作失败"
+    }
+  },
+  "notFound": {
+    "title": "页面未找到",
+    "desc": "您访问的页面不存在或已被移动"
+  },
+  "footer": {
+    "desc": "AI 驱动的 Web 2D RPG 游戏引擎",
+    "links": "链接",
+    "resources": "资源",
+    "community": "社区",
+    "license": "MIT 许可证开源"
+  }
+}

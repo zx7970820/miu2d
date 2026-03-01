@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 /**
  * PWAInstallPrompt - 游戏页面专属 PWA 安装提示
@@ -48,6 +49,7 @@ function markDismissed(gameSlug: string) {
 }
 
 export function PWAInstallPrompt({ gameName, logoUrl, ready }: PWAInstallPromptProps) {
+  const { t } = useTranslation();
   const [tick, setTick] = useState(0);
   const gameSlugRef = useRef("");
   const [dismissed, setDismissed] = useState(false);
@@ -123,7 +125,7 @@ export function PWAInstallPrompt({ gameName, logoUrl, ready }: PWAInstallPromptP
       )}
       <div style={{ flex: 1, lineHeight: 1.4 }}>
         <div style={{ fontWeight: 600, marginBottom: 2 }}>{gameName}</div>
-        <div style={{ color: "#a0a0c0", fontSize: 12 }}>添加到桌面，随时畅玩</div>
+        <div style={{ color: "#a0a0c0", fontSize: 12 }}>{t("pwa.installMessage", { gameName })}</div>
       </div>
       <button
         type="button"
@@ -141,7 +143,7 @@ export function PWAInstallPrompt({ gameName, logoUrl, ready }: PWAInstallPromptP
           flexShrink: 0,
         }}
       >
-        添加桌面
+        {t("pwa.installButton")}
       </button>
       <button
         type="button"
@@ -156,7 +158,7 @@ export function PWAInstallPrompt({ gameName, logoUrl, ready }: PWAInstallPromptP
           padding: "0 2px",
           flexShrink: 0,
         }}
-        aria-label="关闭"
+        aria-label={t("pwa.dismissButton")}
       >
         ×
       </button>

@@ -1,0 +1,103 @@
+{
+  "pwa": {
+    "updateMessage": "ゲームエンジンが更新されました。最新版を取得するには再読み込みしてください。",
+    "updateButton": "今すぐ更新",
+    "dismissButton": "閉じる",
+    "installMessage": "ホーム画面に追加して、いつでも遊ぼう！",
+    "installButton": "ホームに追加"
+  },
+  "lang": {
+    "zh": "简体中文",
+    "en": "English",
+    "ja": "日本語"
+  },
+  "settings": {
+    "title": "アカウント設定",
+    "profile": "プロフィール",
+    "avatar": "アバター",
+    "name": "名前",
+    "email": "メールアドレス",
+    "save": "保存",
+    "saving": "保存中...",
+    "saved": "保存しました",
+    "cancel": "キャンセル",
+    "changePassword": "パスワード変更",
+    "currentPassword": "現在のパスワード",
+    "newPassword": "新しいパスワード",
+    "confirmNewPassword": "新しいパスワード（確認）",
+    "passwordChanged": "パスワードを変更しました",
+    "language": "言語",
+    "theme": "テーマ",
+    "themeLight": "ライト",
+    "themeDark": "ダーク",
+    "themeAuto": "システム",
+    "langAuto": "システム",
+    "dangerZone": "危険な操作",
+    "deleteAvatar": "アバターを削除",
+    "deleteAvatarConfirm": "アバターを削除しますか？",
+    "namePlaceholder": "名前を入力",
+    "emailPlaceholder": "メールアドレスを入力",
+    "passwordPlaceholder": "4文字以上"
+  },
+  "nav": {
+    "features": "機能",
+    "demo": "デモ",
+    "docs": "ドキュメント",
+    "github": "GitHub",
+    "login": "ログイン",
+    "register": "新規登録"
+  },
+  "auth": {
+    "login": {
+      "title": "Miu2D にログイン",
+      "subtitle": "おかえりなさい、冒険を続けましょう",
+      "email": "メールアドレス",
+      "password": "パスワード",
+      "submit": "ログイン",
+      "loading": "ログイン中...",
+      "noAccount": "アカウントをお持ちでないですか？",
+      "toRegister": "新規登録"
+    },
+    "register": {
+      "title": "Miu2D に新規登録",
+      "subtitle": "参加して、武侠の旅を始めましょう",
+      "name": "ユーザー名",
+      "email": "メールアドレス",
+      "password": "パスワード",
+      "confirmPassword": "パスワード確認",
+      "submit": "新規登録",
+      "loading": "登録中...",
+      "hasAccount": "すでにアカウントをお持ちですか？",
+      "toLogin": "ログイン"
+    },
+    "logout": "ログアウト"
+  },
+  "errors": {
+    "auth": {
+      "invalidCredentials": "メールアドレスまたはパスワードが正しくありません",
+      "emailAlreadyRegistered": "このメールアドレスは既に登録されています",
+      "passwordMismatch": "パスワードが一致しません"
+    },
+    "common": {
+      "unauthorized": "ログインしてください",
+      "forbidden": "この操作を実行する権限がありません",
+      "notFound": "リソースが見つかりません",
+      "badRequest": "リクエストパラメータが無効です",
+      "serverError": "サーバーエラーが発生しました。後でもう一度お試しください",
+      "networkError": "ネットワーク接続に失敗しました。接続を確認してください",
+      "unknownError": "不明なエラーが発生しました",
+      "operationFailed": "操作に失敗しました"
+    }
+  },
+  "notFound": {
+    "title": "ページが見つかりません",
+    "desc": "お探しのページは存在しないか、移動されました"
+  },
+  "footer": {
+    "desc": "AI駆動のWeb 2D RPGゲームエンジン",
+    "links": "リンク",
+    "resources": "リソース",
+    "community": "コミュニティ",
+    "license": "MITライセンスでオープンソース"
+  }
+}

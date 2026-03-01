@@ -1,53 +1,16 @@
 /**
- * 中文翻译资源
+ * 服务端中文翻译资源
+ *
+ * 仅包含服务端 getMessage() 实际用到的 errors.* 键。
+ * 前端翻译使用 react-i18next，参见 ../i18n/index.ts
  */
 export const zh = {
   translation: {
-    brand: "Miu2D Engine",
-    nav: {
-      features: "功能特性",
-      demo: "在线演示",
-      docs: "文档",
-      github: "GitHub",
-      games: "游戏",
-      login: "登录",
-      register: "注册",
-      dashboard: "控制台",
-    },
-    auth: {
-      login: {
-        title: "登录 Miu2D",
-        email: "邮箱",
-        password: "密码",
-        submit: "登录",
-        loading: "登录中...",
-        noAccount: "没有账号？",
-        toRegister: "立即注册",
-      },
-      register: {
-        title: "注册 Miu2D",
-        name: "用户名",
-        email: "邮箱",
-        password: "密码",
-        confirmPassword: "确认密码",
-        submit: "注册",
-        loading: "注册中...",
-        hasAccount: "已有账号？",
-        toLogin: "立即登录",
-      },
-      logout: "退出登录",
-    },
-    game: {
-      title: "游戏",
-      create: "创建游戏",
-      myGames: "我的游戏",
-      noGames: "暂无游戏",
-    },
     errors: {
       common: {
         unauthorized: "未登录",
         forbidden: "无权限访问",
-        requestFailed: "请求失败",
+        notFound: "资源不存在",
         missingGame: "缺少游戏参数",
         gameForbidden: "无权限访问该游戏",
       },
@@ -55,7 +18,6 @@ export const zh = {
         invalidCredentials: "账号或密码错误",
         defaultGameNotFound: "未找到默认游戏",
         emailAlreadyRegistered: "邮箱已注册",
-        passwordMismatch: "两次密码不一致",
       },
       user: {
         notFound: "用户不存在",
@@ -90,18 +52,15 @@ export const zh = {
         itemNotFound: "场景子项不存在",
         keyConflict: "场景标识已存在",
       },
-    },
-    footer: {
-      copyright: "© 2026 Miu2D Engine. All rights reserved.",
-      tagline: "AI 驱动的 2D RPG 游戏引擎",
-      about: "关于",
-    },
-    pwa: {
-      updateMessage: "游戏引擎已更新，刷新以获取最新版本",
-      updateButton: "立即刷新",
-      dismissButton: "关闭",
-      installMessage: "将「{{gameName}}」添加到桌面，随时畅玩！",
-      installButton: "添加到桌面",
+      goods: {
+        notFound: "物品不存在",
+      },
+      npc: {
+        notFound: "NPC 不存在",
+      },
+      obj: {
+        notFound: "物件不存在",
+      },
     },
   },
 };

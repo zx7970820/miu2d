@@ -6,6 +6,10 @@
 
 import { useAuth } from "@miu2d/shared";
 
+const isPWA =
+  window.matchMedia("(display-mode: standalone)").matches ||
+  ("standalone" in navigator && (navigator as { standalone?: boolean }).standalone === true);
+
 export interface ToolbarButton {
   id: string;
   icon: React.ReactNode;
@@ -28,12 +32,12 @@ export function GameTopBar({ gameName, logoUrl, toolbarButtons, onLoginClick }: 
 
   return (
     <div className="h-10 bg-black/40 backdrop-blur-md border-b border-white/10 flex items-center justify-between px-4 z-20 flex-shrink-0">
-      {/* 左侧：Logo + 游戏名称 */}
+      {/* 左侧：Logo + 游戏名称（PWA 模式下隐藏） */}
       <div className="flex items-center gap-2 text-white/80 text-sm font-medium truncate min-w-0">
-        {logoUrl && (
+        {!isPWA && logoUrl && (
           <img src={logoUrl} alt="" className="w-6 h-6 rounded object-contain flex-shrink-0" />
         )}
-        <span className="truncate">{gameName}</span>
+        {!isPWA && <span className="truncate">{gameName}</span>}
       </div>
 
       {/* 中间：工具栏按钮 */}
