@@ -1683,6 +1683,29 @@ def step_magic(root: str):
     n = replace_mpc_with_msf_in_ini_dir(magic_dir)
     log(f"magic: 更新 {n} 个文件 (.mpc→.msf)")
 
+    # 重映射定身武功：SpecialKind=1 在飞行类(MoveKind≠13)中表示定身，
+    # 改为 SpecialKind=10(Immobilize)，与月影传说冰冻(减速,SpecialKind=1)区分
+    remapped = 0
+    for fn in sorted(os.listdir(magic_dir)):
+        if not fn.lower().endswith(".ini"):
+            continue
+        filepath = os.path.join(magic_dir, fn)
+        try:
+            text = read_gbk(filepath)
+        except Exception:
+            continue
+        # FollowCharacter(MoveKind=13) 是自身增益，SpecialKind=1 = 加生命，保留
+        m = re.search(r"^\s*MoveKind\s*=\s*(\d+)\s*$", text, re.MULTILINE | re.IGNORECASE)
+        if m and int(m.group(1)) == 13:
+            continue
+        # 将精确值 SpecialKind=1 改为 10（不影响 SpecialKind=10/11 等其他值）
+        new_text = re.sub(r"^(SpecialKind\s*=\s*)1(\s*)$", r"\g<1>10\2", text, flags=re.MULTILINE | re.IGNORECASE)
+        if new_text != text:
+            write_file(filepath, new_text)
+            remapped += 1
+    if remapped:
+        log(f"magic: 重映射 {remapped} 个文件 (SpecialKind 1→10, 定身效果)")
+
 
 # ============================================================
 # Step 10: Save format adaptation

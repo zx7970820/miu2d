@@ -106,6 +106,11 @@ export abstract class Character extends CharacterCombat {
       return;
     }
 
+    // 定身时完全停止
+    if (statusResult.isImmobilized) {
+      return;
+    }
+
     const effectiveDeltaTime = statusResult.effectiveDeltaTime;
 
     // 特殊动作处理

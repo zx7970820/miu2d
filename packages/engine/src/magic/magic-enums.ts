@@ -83,6 +83,8 @@ export enum MagicSpecialKind {
   RemoveAbnormal = 8,
   // 改变飞行ini
   ChangeFlyIni = 9,
+  // 定身（剑侠2：完全停止移动和行动）
+  Immobilize = 10,
 }
 
 /**

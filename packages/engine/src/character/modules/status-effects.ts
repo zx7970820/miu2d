@@ -15,6 +15,8 @@ import type { MagicData } from "../../magic/types";
 export interface StatusEffectsUpdateResult {
   /** 是否被石化（需要跳过后续更新） */
   isPetrified: boolean;
+  /** 是否被定身（需要跳过后续更新） */
+  isImmobilized: boolean;
   /** 速度倍率（加速效果） */
   speedFold: number;
   /** 有效的时间差（考虑冰冻减速） */
@@ -46,6 +48,8 @@ export class StatusEffectsManager {
   isPoisonVisualEffect = false;
   isPetrifiedVisualEffect = false;
   isFrozenVisualEffect = false;
+  immobilizedSeconds = 0;
+  isImmobilizedVisualEffect = false;
   poisonByCharacterName = "";
 
   // ========== 隐身效果 ==========
@@ -86,6 +90,11 @@ export class StatusEffectsManager {
     return this.frozenSeconds > 0;
   }
 
+  /** 是否被定身 */
+  get isImmobilized(): boolean {
+    return this.immobilizedSeconds > 0;
+  }
+
   /** 是否中毒 */
   get isPoisoned(): boolean {
     return this.poisonSeconds > 0;
@@ -101,7 +110,7 @@ export class StatusEffectsManager {
    * 未被冻结、中毒、石化时返回 true
    */
   get bodyFunctionWell(): boolean {
-    return this.frozenSeconds <= 0 && this.poisonSeconds <= 0 && this.petrifiedSeconds <= 0;
+    return this.frozenSeconds <= 0 && this.poisonSeconds <= 0 && this.petrifiedSeconds <= 0 && this.immobilizedSeconds <= 0;
   }
 
   // ========== Set Methods (不覆盖已有效果) ==========
@@ -136,6 +145,15 @@ export class StatusEffectsManager {
     this.isPetrifiedVisualEffect = hasVisualEffect;
   }
 
+  /**
+   * 设置定身时间，已定身时不覆盖
+   */
+  setImmobilizedSeconds(seconds: number, hasVisualEffect: boolean): void {
+    if (this.immobilizedSeconds > 0) return;
+    this.immobilizedSeconds = seconds;
+    this.isImmobilizedVisualEffect = hasVisualEffect;
+  }
+
   // ========== Clear Methods ==========
 
   /**
@@ -145,6 +163,7 @@ export class StatusEffectsManager {
     this.clearFrozen();
     this.clearPoison();
     this.clearPetrifaction();
+    this.clearImmobilized();
   }
 
   /**
@@ -154,6 +173,7 @@ export class StatusEffectsManager {
     this.clearFrozen();
     this.clearPoison();
     this.clearPetrifaction();
+    this.clearImmobilized();
     this.disableMoveMilliseconds = 0;
     this.disableSkillMilliseconds = 0;
   }
@@ -175,6 +195,12 @@ export class StatusEffectsManager {
   clearPetrifaction(): void {
     this.petrifiedSeconds = 0;
     this.isPetrifiedVisualEffect = false;
+  }
+
+  /** 清除定身状态 */
+  clearImmobilized(): void {
+    this.immobilizedSeconds = 0;
+    this.isImmobilizedVisualEffect = false;
   }
 
   // ========== Effect Application Methods ==========
@@ -234,6 +260,7 @@ export class StatusEffectsManager {
     const deltaMs = deltaTime * 1000;
     const result: StatusEffectsUpdateResult = {
       isPetrified: false,
+      isImmobilized: false,
       speedFold: 1.0,
       effectiveDeltaTime: deltaTime,
       poisonDamage: 0,
@@ -343,6 +370,13 @@ export class StatusEffectsManager {
     if (this.petrifiedSeconds > 0) {
       this.petrifiedSeconds -= foldedDeltaTime;
       result.isPetrified = true;
+      return result;
+    }
+
+    // === 定身效果（全停）===
+    if (this.immobilizedSeconds > 0) {
+      this.immobilizedSeconds -= foldedDeltaTime;
+      result.isImmobilized = true;
       return result;
     }
 

@@ -195,5 +195,8 @@ export function applyStatusEffect(
     case 3:
       character.statusEffects.setPetrifySeconds(seconds, showEffect);
       break;
+    case 10:
+      character.statusEffects.setImmobilizedSeconds(seconds, showEffect);
+      break;
   }
 }

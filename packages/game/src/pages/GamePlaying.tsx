@@ -79,8 +79,12 @@ export function GamePlaying({
   const [engine, setEngine] = useState<ReturnType<GameHandle["getEngine"]>>(null);
   const { isAuthenticated } = useAuth();
 
-  // 实际可用的游戏画布宽度（扣除调试面板占用）
-  const effectiveGameWidth = windowSize.width - (showDebug ? debugPanelWidth : 0);
+  // 实际可用的游戏画布宽度
+  // 自适应模式（分辨率 = 0 x 0）时才扣除调试面板宽度，固定分辨率下游戏画面大小不受调试面板影响
+  const isAutoResolution = gameResolution.width === 0;
+  const effectiveGameWidth = showDebug && isAutoResolution
+    ? windowSize.width - debugPanelWidth
+    : windowSize.width;
 
   // 获取 DebugManager / Engine（稳定引用，通过 ref 访问）
   const getDebugManager = useCallback(() => gameRef.current?.getDebugManager(), []);

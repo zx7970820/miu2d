@@ -81,6 +81,7 @@ export const MagicSpecialKindEnum = z.enum([
   "ChangeCharacter", // 7 - 变身
   "RemoveAbnormal", // 8 - 解除异常状态
   "ChangeFlyIni", // 9 - 改变飞行ini
+  "Immobilize", // 10 - 定身（剑侠2：飞行型SpecialKind=1，完全停止）
 ]);
 
 export type MagicSpecialKind = z.infer<typeof MagicSpecialKindEnum>;
@@ -96,6 +97,7 @@ export const MagicSpecialKindValues: Record<MagicSpecialKind, number> = {
   ChangeCharacter: 7,
   RemoveAbnormal: 8,
   ChangeFlyIni: 9,
+  Immobilize: 10,
 };
 
 export const MagicSpecialKindFromValue: Record<number, MagicSpecialKind> = Object.fromEntries(
@@ -1039,4 +1041,5 @@ export const MagicSpecialKindLabels: Record<MagicSpecialKind, string> = {
   ChangeCharacter: "变身",
   RemoveAbnormal: "解除异常",
   ChangeFlyIni: "改变飞行",
+  Immobilize: "定身",
 };

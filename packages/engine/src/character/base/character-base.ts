@@ -283,6 +283,15 @@ export abstract class CharacterBase extends Sprite implements CharacterInstance 
   set isFrozenVisualEffect(v: boolean) {
     this.statusEffects.isFrozenVisualEffect = v;
   }
+  get immobilizedSeconds(): number {
+    return this.statusEffects.immobilizedSeconds;
+  }
+  set immobilizedSeconds(v: number) {
+    this.statusEffects.immobilizedSeconds = v;
+  }
+  get isImmobilizedVisualEffect(): boolean {
+    return this.statusEffects.isImmobilizedVisualEffect;
+  }
 
   // === LifeMilliseconds ===
   protected _lifeMilliseconds: number = 0;
@@ -667,8 +676,12 @@ export abstract class CharacterBase extends Sprite implements CharacterInstance 
     return this.petrifiedSeconds > 0;
   }
 
+  get isImmobilized(): boolean {
+    return this.immobilizedSeconds > 0;
+  }
+
   get bodyFunctionWell(): boolean {
-    return this.frozenSeconds <= 0 && this.poisonSeconds <= 0 && this.petrifiedSeconds <= 0;
+    return this.frozenSeconds <= 0 && this.poisonSeconds <= 0 && this.petrifiedSeconds <= 0 && this.immobilizedSeconds <= 0;
   }
 
   get isNotFightBackWhenBeHit(): boolean {

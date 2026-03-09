@@ -58,6 +58,7 @@ const SPECIAL_KIND_MAP: Record<string, MagicSpecialKind> = {
   ChangeCharacter: MagicSpecialKind.ChangeCharacter,
   RemoveAbnormal: MagicSpecialKind.RemoveAbnormal,
   ChangeFlyIni: MagicSpecialKind.ChangeFlyIni,
+  Immobilize: MagicSpecialKind.Immobilize,
 };
 
 // ========== 路径处理 ==========

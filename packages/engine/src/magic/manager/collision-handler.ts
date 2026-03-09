@@ -40,6 +40,7 @@ import type {
   MagicSpriteManagerDeps,
   MagicSpriteManagerState,
 } from "./types";
+import { MagicSpecialKind } from "../magic-enums";
 
 /**
  * 碰撞处理回调
@@ -507,6 +508,15 @@ export class MagicCollisionHandler implements CollisionHandler {
           ? magic.specialKindMilliSeconds / 1000
           : magic.effectLevel + 1;
       applyStatusEffect(magic.specialKind, character, seconds, showEffect, belongCharacter);
+    }
+
+    // 定身效果（剑侠2 specialKind=1 重映射后）
+    if (magic.specialKind === MagicSpecialKind.Immobilize) {
+      const seconds =
+        magic.specialKindMilliSeconds > 0
+          ? magic.specialKindMilliSeconds / 1000
+          : magic.effectLevel + 1;
+      character.statusEffects.setImmobilizedSeconds(seconds, showEffect);
     }
 
     // AdditionalEffect 效果
