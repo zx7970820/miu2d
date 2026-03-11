@@ -11,7 +11,7 @@
 
 import { logger } from "../../core/logger";
 import type { Mpc } from "../../map/types";
-import { decodeMpcWasm } from "../../wasm/wasm-mpc-decoder";
+import { decodeMpcOffThread } from "../../wasm/wasm-decode-service";
 import { resourceLoader } from "../resource-loader";
 import { loadShd, type Shd } from "./shd";
 
@@ -28,7 +28,7 @@ function rewriteMpcToMsf(url: string): string {
  */
 export async function loadMpc(url: string): Promise<Mpc | null> {
   const msfUrl = rewriteMpcToMsf(url);
-  return resourceLoader.loadParsedBinary<Mpc>(msfUrl, decodeMpcWasm, "mpc");
+  return resourceLoader.loadParsedBinaryAsync<Mpc>(msfUrl, decodeMpcOffThread, "mpc");
 }
 
 /**
@@ -67,7 +67,7 @@ export async function loadMpcWithShadow(mpcUrl: string, shdUrl?: string): Promis
     logger.debug(`[MPC] SHD shadow is already merged in MSF RGBA (no runtime action needed)`);
   }
 
-  return decodeMpcWasm(buffer);
+  return decodeMpcOffThread(buffer);
 }
 
 /**

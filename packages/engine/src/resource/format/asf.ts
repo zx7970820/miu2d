@@ -8,7 +8,7 @@
  * 注意：使用前需在应用启动时调用 await initWasm()
  */
 
-import { decodeAsfWasm } from "../../wasm/wasm-asf-decoder";
+import { decodeAsfOffThread } from "../../wasm/wasm-decode-service";
 import { resourceLoader } from "../resource-loader";
 
 export interface AsfFrame {
@@ -64,7 +64,7 @@ export function getCachedAsf(url: string): AsfData | null {
 
 export async function loadAsf(url: string): Promise<AsfData | null> {
   const msfUrl = rewriteAsfToMsf(url);
-  return resourceLoader.loadParsedBinary<AsfData>(msfUrl, decodeAsfWasm, "asf");
+  return resourceLoader.loadParsedBinaryAsync<AsfData>(msfUrl, decodeAsfOffThread, "asf");
 }
 
 /** 获取帧的 canvas（延迟创建）— 用于 UI 预览等非批量渲染场景 */

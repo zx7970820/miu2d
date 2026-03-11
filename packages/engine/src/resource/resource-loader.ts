@@ -665,6 +665,107 @@ class ResourceLoaderImpl {
   }
 
   /**
+   * 加载并异步解析二进制资源（缓存解析后的结果）
+   * 与 loadParsedBinary 相同，但 parser 为 async 函数（例如 Worker 解码）
+   */
+  async loadParsedBinaryAsync<T>(
+    path: string,
+    asyncParser: (buffer: ArrayBuffer) => Promise<T | null>,
+    resourceType: ResourceType
+  ): Promise<T | null> {
+    const normalizedPath = this.normalizePath(path);
+    const cacheKey = `${resourceType}:${normalizedPath}`;
+    const typeStats = this.stats.byType[resourceType] || this.stats.byType.other;
+    this.stats.totalRequests++;
+    typeStats.requests++;
+
+    if (this.failedPaths.has(cacheKey)) {
+      this.stats.cacheHits++;
+      typeStats.hits++;
+      return null;
+    }
+
+    const cached = this.iniCache.get(cacheKey);
+    if (cached) {
+      this.stats.cacheHits++;
+      typeStats.hits++;
+      cached.lastAccess = Date.now();
+      cached.accessCount++;
+      return cached.data as T;
+    }
+
+    const pendingKey = `${cacheKey}:parsed`;
+    const pending = this.pendingLoads.get(pendingKey);
+    if (pending) {
+      this.stats.dedupeHits++;
+      typeStats.dedupeHits++;
+      return (await pending) as T | null;
+    }
+
+    const loadPromise = this.fetchAndParseBinaryAsync(
+      cacheKey,
+      normalizedPath,
+      asyncParser,
+      resourceType
+    );
+    this.pendingLoads.set(pendingKey, loadPromise);
+
+    try {
+      return await loadPromise;
+    } finally {
+      this.pendingLoads.delete(pendingKey);
+    }
+  }
+
+  private async fetchAndParseBinaryAsync<T>(
+    cacheKey: string,
+    path: string,
+    asyncParser: (buffer: ArrayBuffer) => Promise<T | null>,
+    resourceType: ResourceType
+  ): Promise<T | null> {
+    const typeStats = this.stats.byType[resourceType] || this.stats.byType.other;
+    this.stats.networkRequests++;
+    typeStats.loads++;
+
+    try {
+      const url = getResourceUrl(path);
+      const response = await fetch(url);
+      if (!response.ok) {
+        this.stats.failures++;
+        this.failedPaths.add(cacheKey);
+        return null;
+      }
+
+      const buffer = await response.arrayBuffer();
+      const parsed = await asyncParser(buffer);
+      if (!parsed) {
+        this.stats.failures++;
+        this.failedPaths.add(cacheKey);
+        return null;
+      }
+
+      const estimatedSize = buffer.byteLength;
+      const entry: CacheEntry<unknown> = {
+        data: parsed,
+        size: estimatedSize,
+        loadTime: Date.now(),
+        lastAccess: Date.now(),
+        accessCount: 1,
+      };
+      this.iniCache.set(cacheKey, entry);
+      this.updateCacheStats();
+      this.recordRecentLoad(path, resourceType, estimatedSize);
+
+      return parsed;
+    } catch (error) {
+      logger.warn(`[ResourceLoader] Failed to load/parse binary (async): ${path}`, error);
+      this.stats.failures++;
+      this.failedPaths.add(cacheKey);
+      return null;
+    }
+  }
+
+  /**
    * 检查资源是否已缓存
    */
   isCached(path: string, type: ResourceType): boolean {
