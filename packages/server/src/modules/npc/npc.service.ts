@@ -554,7 +554,7 @@ export class NpcService {
           result.pathFinder = parseInt(value, 10) || 1;
           break;
         case "Idle":
-          result.idle = parseInt(value, 10) || 5;
+          result.idle = parseInt(value, 10) || 0;
           break;
         case "DeathScript":
           result.deathScript = value || null;
