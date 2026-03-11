@@ -470,24 +470,9 @@ export class GameManager {
    * Uses Player's loadSpritesFromNpcIni method directly
    */
   async loadPlayerSprites(npcIni: string): Promise<void> {
-    // 先加载最小可见状态（stand/walk/fightStand/fightWalk/hurt），
-    // 其余动画（attack/magic/run/death 等）后台静默加载，不阻塞游戏启动。
-    const loaded = await this.player.loadSpritesFromNpcIni(npcIni, {
-      deferKeys: new Set<keyof import("../sprite/sprite").SpriteSet>([
-        "attack",
-        "attack1",
-        "attack2",
-        "magic",
-        "run",
-        "fightRun",
-        "jump",
-        "fightJump",
-        "death",
-        "sit",
-        "stand1",
-        "special",
-      ]),
-    });
+    // 玩家精灵必须全量加载：战斗存档需要攻击/武功/死亡等所有动画状态。
+    // 玩家加载与近距离 NPC 并行执行，不阻塞彼此；远距离 NPC 在游戏启动后后台加载。
+    const loaded = await this.player.loadSpritesFromNpcIni(npcIni);
     if (!loaded) {
       logger.warn(`[GameManager] Failed to load player sprites from ${npcIni}`);
     }
