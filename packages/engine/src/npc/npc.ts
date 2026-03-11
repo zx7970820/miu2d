@@ -414,27 +414,19 @@ export class Npc extends Character {
   // === AI Update ===
 
   /**
-   * Update(gameTime)
-   * Main NPC update method - 使用 NpcAI 模块处理 AI 逻辑
+   * 主更新循环：先推进状态机（动画 + 状态转换），再执行 AI。
+   * 确保攻击动画结束→站立→AI 立即发起新攻击，避免 1 帧站立闪烁。
    */
   override update(deltaTime: number): void {
-    // if(!IsVisibleByVariable) { return; }
     if (!this.isVisibleByVariable) return;
 
-    // Dead NPCs only update death animation, no AI
     if (this.isDeathInvoked || this.isDeath) {
       super.update(deltaTime);
       return;
     }
 
-    // if(_controledMagicSprite != null) { base.Update(); return; }
-    // Skip if controlled by magic (not implemented yet)
-
-    // 使用 AI 模块更新 AI 行为
-    this._ai.update(deltaTime);
-
-    // Parent update (movement and animation)
     super.update(deltaTime);
+    this._ai.update(deltaTime);
   }
 
   // === AI 公共方法（供 NpcAI 模块调用）===
