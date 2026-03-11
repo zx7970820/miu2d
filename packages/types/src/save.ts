@@ -26,7 +26,7 @@ export const SaveSlotSchema = z.object({
   level: z.number().optional(),
   /** 玩家名称 */
   playerName: z.string().optional(),
-  /** 截图 (base64 JPEG) */
+  /** 截图 S3 key（例如 saves/{userId}/{saveId}.jpg） */
   screenshot: z.string().optional(),
   /** 是否公开分享 */
   isShared: z.boolean(),
@@ -56,7 +56,7 @@ export const UpsertSaveInputSchema = z.object({
   level: z.number().optional(),
   /** 玩家名称 */
   playerName: z.string().optional(),
-  /** 截图 (base64 JPEG) */
+  /** 截图 base64 JPEG（后端接收后上传 S3 并转换为 key） */
   screenshot: z.string().optional(),
   /** 存档数据（完整 SaveData JSON） */
   data: z.record(z.string(), z.unknown()),

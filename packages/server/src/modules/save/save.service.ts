@@ -4,12 +4,28 @@
  * 处理存档的 CRUD、分享、管理员操作
  */
 
-import { randomBytes } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import type { Prisma } from "@prisma/client";
 import type { Save as PrismaSave } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { db } from "../../db/client";
+import { deleteFile, uploadFile } from "../../storage/s3";
 import { verifyGameOwnerAccess } from "../../utils/gameAccess";
+import { Logger } from "../../utils/logger.js";
+
+const logger = new Logger("SaveService");
+
+function isBase64DataUri(str: string): boolean {
+  return str.startsWith("data:image/");
+}
+
+async function uploadScreenshotToS3(userId: string, saveId: string, dataUri: string): Promise<string> {
+  const base64Data = dataUri.replace(/^data:image\/\w+;base64,/, "");
+  const buffer = Buffer.from(base64Data, "base64");
+  const key = `saves/${userId}/${saveId}.jpg`;
+  await uploadFile(key, buffer, "image/jpeg");
+  return key;
+}
 
 function generateShareCode(): string {
   return randomBytes(6).toString("base64url"); // 8 chars
@@ -65,19 +81,10 @@ export class SaveService {
   ) {
     const game = await this.resolveGame(input.gameSlug);
 
-    const values = {
-      gameId: game.id,
-      userId,
-      name: input.name,
-      mapName: input.mapName ?? null,
-      level: input.level ?? null,
-      playerName: input.playerName ?? null,
-      screenshot: input.screenshot ?? null,
-      data: input.data as unknown as Prisma.InputJsonValue,
-      updatedAt: new Date(),
-    };
+    // Pre-determine saveId so it can be used as the S3 key
+    const targetSaveId = input.saveId ?? randomUUID();
 
-    // 覆盖已有存档
+    // 覆盖已有存档时先校验归属
     if (input.saveId) {
       const existing = await db.save.findFirst({ where: { id: input.saveId }, select: { id: true, userId: true } });
 
@@ -88,17 +95,36 @@ export class SaveService {
       if (existing.userId !== userId) {
         throw new TRPCError({ code: "FORBIDDEN", message: "无权覆盖此存档" });
       }
-
-      const updated = await db.save.update({ where: { id: input.saveId }, data: values });
-
-      return {
-        ...this.toOutput(updated),
-      };
     }
 
-    // 创建新存档
-    const created = await db.save.create({ data: values });
+    // 处理截图：base64 上传 S3，只存 key
+    let screenshotKey: string | null = null;
+    if (input.screenshot) {
+      if (isBase64DataUri(input.screenshot)) {
+        screenshotKey = await uploadScreenshotToS3(userId, targetSaveId, input.screenshot);
+      } else {
+        screenshotKey = input.screenshot;
+      }
+    }
 
+    const values = {
+      gameId: game.id,
+      userId,
+      name: input.name,
+      mapName: input.mapName ?? null,
+      level: input.level ?? null,
+      playerName: input.playerName ?? null,
+      screenshot: screenshotKey,
+      data: input.data as unknown as Prisma.InputJsonValue,
+      updatedAt: new Date(),
+    };
+
+    if (input.saveId) {
+      const updated = await db.save.update({ where: { id: input.saveId }, data: values });
+      return this.toOutput(updated);
+    }
+
+    const created = await db.save.create({ data: { id: targetSaveId, ...values } });
     return this.toOutput(created);
   }
 
@@ -106,7 +132,7 @@ export class SaveService {
    * 删除存档
    */
   async delete(saveId: string, userId: string) {
-    const existing = await db.save.findFirst({ where: { id: saveId }, select: { id: true, userId: true } });
+    const existing = await db.save.findFirst({ where: { id: saveId }, select: { id: true, userId: true, screenshot: true } });
 
     if (!existing) {
       throw new TRPCError({ code: "NOT_FOUND", message: "存档不存在" });
@@ -117,6 +143,16 @@ export class SaveService {
     }
 
     await db.save.delete({ where: { id: saveId } });
+
+    // 删除 S3 截图（仅当存储的是 key，而不是旧的 base64）
+    if (existing.screenshot && !isBase64DataUri(existing.screenshot)) {
+      try {
+        await deleteFile(existing.screenshot);
+      } catch (e) {
+        logger.error("[SaveService] Failed to delete screenshot from S3:", e);
+      }
+    }
+
     return { id: saveId };
   }
 
@@ -324,7 +360,7 @@ export class SaveService {
    * 管理员删除存档（可删除任何用户的存档）
    */
   async adminDelete(saveId: string, operatorId: string) {
-    const existing = await db.save.findFirst({ where: { id: saveId }, select: { id: true, gameId: true } });
+    const existing = await db.save.findFirst({ where: { id: saveId }, select: { id: true, gameId: true, screenshot: true } });
 
     if (!existing) {
       throw new TRPCError({ code: "NOT_FOUND", message: "存档不存在" });
@@ -333,6 +369,16 @@ export class SaveService {
     await verifyGameOwnerAccess(existing.gameId, operatorId);
 
     await db.save.delete({ where: { id: saveId } });
+
+    // 删除 S3 截图（仅当存储的是 key，而不是旧的 base64）
+    if (existing.screenshot && !isBase64DataUri(existing.screenshot)) {
+      try {
+        await deleteFile(existing.screenshot);
+      } catch (e) {
+        logger.error("[SaveService] Failed to delete screenshot from S3:", e);
+      }
+    }
+
     return { id: saveId };
   }
 

@@ -8,7 +8,7 @@
  * - 支持分享功能
  */
 
-import { trpc, useAuth } from "@miu2d/shared";
+import { trpc, useAuth, getS3Url } from "@miu2d/shared";
 import type { SaveSlot } from "@miu2d/types";
 import { useCallback, useEffect, useState } from "react";
 
@@ -384,7 +384,11 @@ function SaveSlotCard({
         {/* 截图 */}
         <div className="w-16 h-12 rounded-lg overflow-hidden bg-black/30 flex-shrink-0">
           {save.screenshot ? (
-            <img src={save.screenshot} alt="" className="w-full h-full object-cover" />
+            <img
+              src={save.screenshot.startsWith("data:") ? save.screenshot : getS3Url(save.screenshot)}
+              alt=""
+              className="w-full h-full object-cover"
+            />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-white/20 text-xs">
               空

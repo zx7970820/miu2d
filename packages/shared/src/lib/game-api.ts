@@ -41,6 +41,19 @@ export function getResourceDomain(): string {
   return "";
 }
 
+/**
+ * 根据 S3 key 构造公开访问 URL
+ *
+ * 环境变量: VITE_S3_BASE_URL（默认 /s3/miu2d）
+ * 例如: /s3/miu2d 或 https://cdn.example.com/miu2d
+ *
+ * @param key S3 对象 key，如 saves/userId/saveId.jpg
+ */
+export function getS3Url(key: string): string {
+  const base = (import.meta.env.VITE_S3_BASE_URL as string | undefined) ?? "/s3/miu2d";
+  return `${base.replace(/\/+$/, "")}/${key}`;
+}
+
 // ==================== 数据类型 ====================
 
 /**
