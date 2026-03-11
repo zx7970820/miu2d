@@ -559,9 +559,11 @@ export class Loader {
       );
 
       // Task C: NPC + 伙伴
-      // 2 屏阈值（约 40 瓦片）内的 NPC 立即并行加载并上报进度；
-      // 超出范围的 NPC 在游戏启动后后台静默加载，不阻塞进度条。
+      // 近距离（≤20格）立即并行加载并上报进度；
+      // 远距离 NPC 的后台加载函数在 await Promise.all(parallelTasks) 之后再启动，
+      // 避免与玩家精灵加载争抢网络/解码资源。
       const allNpcs = [...(data.snapshot.npc ?? []), ...(data.snapshot.partner ?? [])];
+      let startFarNpcLoad: (() => void) | null = null;
       if (allNpcs.length > 0) {
         parallelTasks.push(
           (async () => {
@@ -569,7 +571,7 @@ export class Loader {
             npcManager.clearAllNpc();
             if (state.npc) npcManager.setFileName(state.npc);
             let nearCount = allNpcs.length; // 初值：未分流时视为全部近距离
-            await loadNpcsFromJSON(allNpcs, npcManager, {
+            const bgLoader = await loadNpcsFromJSON(allNpcs, npcManager, {
               playerTile: { x: data.player.mapX, y: data.player.mapY },
               nearThreshold: 20,
               onProgress: (done, nearTotal) => {
@@ -581,6 +583,7 @@ export class Loader {
                 );
               },
             });
+            startFarNpcLoad = bgLoader;
             const farCount = allNpcs.length - nearCount;
             time(
               farCount > 0 ? `NPCs(${nearCount}near+${farCount}bg)` : `NPCs(${allNpcs.length})`,
@@ -611,6 +614,11 @@ export class Loader {
       );
 
       await Promise.all(parallelTasks);
+
+      // 所有阻塞任务完成后，再启动远距离 NPC 后台加载（不再与玩家精灵争资源）
+      if (startFarNpcLoad !== null) {
+        (startFarNpcLoad as () => void)();
+      }
 
       // ── Phase 5: 收尾 ──
       this.reportProgress(90, "应用装备效果...");

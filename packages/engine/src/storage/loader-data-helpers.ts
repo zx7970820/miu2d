@@ -211,7 +211,7 @@ export async function loadNpcsFromJSON(
     nearThreshold?: number;
     onProgress?: (done: number, nearTotal: number) => void;
   },
-): Promise<void> {
+): Promise<() => void> {
   const { playerTile, nearThreshold = 40, onProgress } = options ?? {};
 
   // 过滤掉已完全死亡的 NPC
@@ -264,8 +264,13 @@ export async function loadNpcsFromJSON(
 
   logger.debug(`[Loader] Created ${nearResults.filter(Boolean).length}/${nearTotal} near NPCs`);
 
-  // 远距离 NPC：后台静默加载，不阻塞游戏启动
-  if (farNpcs.length > 0) {
+  // 返回后台加载启动函数，由调用方在所有并行任务完成后再触发，
+  // 避免与玩家精灵加载争抢网络/解码资源。
+  if (farNpcs.length === 0) {
+    return () => { /* nothing to do */ };
+  }
+
+  return () => {
     Promise.all(
       farNpcs.map(async (npcData) => {
         try {
@@ -285,7 +290,7 @@ export async function loadNpcsFromJSON(
       .catch((err: unknown) => {
         logger.warn(`[Loader] Background NPC loading error:`, err);
       });
-  }
+  };
 }
 
 /**
