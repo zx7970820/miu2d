@@ -588,14 +588,7 @@ export class GuiManager {
     }
 
     // ============= 4. 小地图界面 =============
-    // else if (LittleMapInterface.IsShow) { if (Tab || ESC) close; }
-    if (this.state.panels.littleMap) {
-      if (code === "Tab" || code === "Escape") {
-        this.toggleMinimap();
-        return true;
-      }
-      return true; // 阻止其他输入
-    }
+    // FogOfWarMap 是非交互 HUD，不拦截任何输入，Tab 由下方统一处理
 
     // ============= 5 & 6. Selection 界面 (ChooseEx / ChooseMultiple) =============
     // else if (SelectionInterface.IsShow) { /* 不处理 ESC，必须选择 */ }

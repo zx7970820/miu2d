@@ -493,9 +493,11 @@ export class MagicSprite extends Sprite {
       this._magic.moveKind === MagicMoveKind.FollowCharacter ||
       this._magic.moveKind === MagicMoveKind.TimeStop
     ) {
-      // 使用 Texture.Interval
-      const textureInterval = this.interval || 100;
-      framesToPlay = Math.floor((this._magic.lifeFrame * 10) / textureInterval);
+      // C++ 原始公式: lifeTime = lifeFrame * EFFECT_FRAME_TIME (1200/60 = 20ms)
+      // 必须用 this.frameInterval（由 renderer 在 resetPlay 前设置的 ASF 真实帧间隔），
+      // 而非 this.interval（父类 texture 上的值，MagicSprite 未挂载 texture 故为 0）
+      const textureInterval = this.frameInterval || 100;
+      framesToPlay = Math.floor((this._magic.lifeFrame * 20) / textureInterval);
       // FollowCharacter/TimeStop 如果 LifeFrame=0，也使用一轮动画
       if (framesToPlay === 0) {
         framesToPlay = framesPerDir;

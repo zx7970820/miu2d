@@ -21,7 +21,7 @@ import {
   EquipPanel,
   GoodsPanel,
   ItemTooltip,
-  LittleMap,
+  // LittleMap,
   MagicPanel,
   MagicTooltip,
   MemoPanel,
@@ -34,6 +34,7 @@ import {
   TopBar,
   XiuLianPanel,
 } from "./ui/modern";
+import { FogOfWarMap } from "./ui/classic/FogOfWarMap";
 import { EngineWatermark } from "./common/EngineWatermark";
 
 interface ModernGameUIWrapperProps {
@@ -396,7 +397,16 @@ export const ModernGameUIWrapper: React.FC<ModernGameUIWrapperProps> = ({
         />
       )}
 
-      {/* 小地图 */}
+      {/* FogOfWarMap - 战争迷雾风格地图（替换原 LittleMap） */}
+      {panels?.littleMap && (
+        <FogOfWarMap
+          mapData={minimapState.mapData}
+          mapName={minimapState.mapName}
+          playerPosition={minimapState.playerPosition}
+          characters={minimapState.characters}
+        />
+      )}
+      {/* 原 LittleMap（已替换为 FogOfWarMap）
       {panels?.littleMap && (
         <LittleMap
           isVisible={true}
@@ -415,6 +425,7 @@ export const ModernGameUIWrapper: React.FC<ModernGameUIWrapperProps> = ({
           }}
         />
       )}
+      */}
 
       {/* 物品提示 */}
       <ItemTooltip

@@ -33,6 +33,10 @@ export interface ScreenEffectsState {
   // Controls the target darkness of FadeIn/FadeOut transitions
   fadeLum: number;
 
+  // Map time of day (SetMapTime command): 0=day, 1=night, 2=dusk, 3=dawn
+  // Controls the tint color of the dark overlay (C++ dayMask color per DayType)
+  mapTime: number;
+
   // Screen flash
   isFlashing: boolean;
   flashColor: Color;
@@ -62,6 +66,7 @@ export class ScreenEffects {
       playerLum: 32,
       mainLum: 32,
       fadeLum: 0,
+      mapTime: 0,
       isFlashing: false,
       flashColor: { r: 255, g: 255, b: 255, a: 255 },
       flashDuration: 0,
@@ -198,6 +203,23 @@ export class ScreenEffects {
   }
 
   /**
+   * SetMapTime command — sets time of day for overlay tint color.
+   * C++ DayType → dayMask color (Weather.cpp resetDay):
+   *   0 = day:   rgb(0,   0,   0)  pure black
+   *   1 = night: rgb(0,   0,  30)  dark blue
+   *   2 = dusk:  rgb(80, 70,   0)  dark orange
+   *   3 = dawn:  rgb(60,  0,  80)  dark purple
+   */
+  setMapTime(time: number): void {
+    this.state.mapTime = Math.max(0, time);
+  }
+
+  /** Get current map time (0=day, 1=night, 2=dusk, 3=dawn) */
+  getMapTime(): number {
+    return this.state.mapTime;
+  }
+
+  /**
    * Compute the dark overlay alpha for the current mainLum.
    * Returns 0 when mainLum >= 31 (full brightness, no overlay).
    */
@@ -209,18 +231,32 @@ export class ScreenEffects {
   }
 
   /**
+   * Get the RGB tint color for the dark overlay based on map time of day.
+   * C++ reference: Weather::resetDay() dayMask colors per DayType.
+   */
+  private mainLumOverlayColor(): { r: number; g: number; b: number } {
+    switch (this.state.mapTime) {
+      case 1: return { r: 0, g: 0, b: 30 };   // night: dark blue
+      case 2: return { r: 80, g: 70, b: 0 };  // dusk:  dark orange
+      case 3: return { r: 60, g: 0, b: 80 };  // dawn:  dark purple
+      default: return { r: 0, g: 0, b: 0 };    // day:   pure black
+    }
+  }
+
+  /**
    * Draw the mainLum dark overlay on top of the scene.
    * Must be called AFTER map/sprite rendering, BEFORE fade/flash overlays.
    */
   drawDarkOverlay(renderer: Renderer, width: number, height: number): void {
     const alpha = this.mainLumOverlayAlpha();
     if (alpha <= 0) return;
+    const { r, g, b } = this.mainLumOverlayColor();
     renderer.fillRect({
       x: 0,
       y: 0,
       width,
       height,
-      color: `rgba(0, 0, 0, ${alpha})`,
+      color: `rgba(${r}, ${g}, ${b}, ${alpha})`,
     });
   }
 
@@ -233,6 +269,7 @@ export class ScreenEffects {
     this.state.playerLum = 32;
     this.state.mainLum = 32;
     this.state.fadeLum = 0;
+    this.state.mapTime = 0;
   }
 
   /**

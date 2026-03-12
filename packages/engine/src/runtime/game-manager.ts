@@ -926,6 +926,7 @@ export class GameManager {
 
   setMapTime(time: number): void {
     this.mapTime = time;
+    this.screenEffects.setMapTime(time);
     logger.debug(`[GameManager] SetMapTime: ${time}`);
   }
 

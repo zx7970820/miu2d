@@ -17,13 +17,14 @@ import {
   BottomGui,
   BottomStateGui,
   BuyGui,
+  FogOfWarMap,
   GambleGui,
   DialogUI,
   EquipGui,
   GoodsGui,
   ItemTooltip,
   LittleHeadGui,
-  LittleMapGui,
+  // LittleMapGui,
   MagicGui,
   MagicTooltip,
   MemoGui,
@@ -373,7 +374,16 @@ export const ClassicGameUI: React.FC<ClassicGameUIProps> = ({ logic, width, heig
         );
       })()}
 
-      {/* LittleMap */}
+      {/* FogOfWarMap - 战争迷雾风格地图（替换原 LittleMapGui） */}
+      {panels?.littleMap && (
+        <FogOfWarMap
+          mapData={minimapState.mapData}
+          mapName={minimapState.mapName}
+          playerPosition={minimapState.playerPosition}
+          characters={minimapState.characters}
+        />
+      )}
+      {/* 原 LittleMapGui（已替换为 FogOfWarMap）
       {panels?.littleMap && (
         <LittleMapGui
           isVisible={true}
@@ -392,6 +402,7 @@ export const ClassicGameUI: React.FC<ClassicGameUIProps> = ({ logic, width, heig
           }}
         />
       )}
+      */}
 
       {/* Dialog - 渲染在弹窗面板之上 */}
       {dialog?.isVisible && (

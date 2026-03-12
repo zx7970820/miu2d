@@ -42,6 +42,8 @@ export { defaultTooltipState, ItemTooltip } from "./ItemTooltip";
 // Little Head GUI (Partner portraits)
 export type { PartnerInfo } from "./LittleHeadGui";
 export { LittleHeadGui } from "./LittleHeadGui";
+// Fog of War Map
+export { FogOfWarMap } from "./FogOfWarMap";
 // Little Map GUI
 export type { CharacterMarker } from "./LittleMapGui";
 export { LittleMapGui } from "./LittleMapGui";
