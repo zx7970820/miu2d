@@ -130,12 +130,18 @@ export const FogOfWarMap: React.FC<FogOfWarMapProps> = ({
   const mapColumns = mapData?.mapColumnCounts ?? 0;
   const mapRows = mapData?.mapRowCounts ?? 0;
 
-  // 玩家 tile 坐标（等角坐标系：行间距 16px，有菱形交错，必须用 pixelToTile）
+  // 去除 isometric stagger，变换为正交俯视坐标（正方形瓦片感）：
+  //   drawX = (col + (row % 2) * 0.5) * CELL_PX
+  //   drawY = (row / 2) * CELL_PX
+  // 奇数行向右偏移半格，恰好还原等角交错为正交网格
+  const canvasW = Math.ceil((mapColumns + 0.5) * CELL_PX) || 1;
+  const canvasH = Math.ceil((mapRows / 2) * CELL_PX) || 1;
+
+  // 玩家 tile 坐标
   const playerTile = pixelToTile(playerPosition.x, playerPosition.y);
   const playerTileX = playerTile.x;
   const playerTileY = playerTile.y;
 
-  // 绘制：1px = 1 tile，全部整数坐标，不会有亚像素模糊
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !mapData || mapColumns === 0 || mapRows === 0) return;
@@ -149,9 +155,9 @@ export const FogOfWarMap: React.FC<FogOfWarMapProps> = ({
     const { barriers } = mapData;
     const { revealed } = exploration;
 
-    ctx.clearRect(0, 0, mapColumns, mapRows);
+    ctx.clearRect(0, 0, canvasW, canvasH);
 
-    // 障碍轮廓（绿色），每个 tile 恰好 1px
+    // 障碍轮廓（绿色）
     ctx.fillStyle = "#00ff00";
     for (let row = 0; row < mapRows; row++) {
       for (let col = 0; col < mapColumns; col++) {
@@ -165,13 +171,15 @@ export const FogOfWarMap: React.FC<FogOfWarMapProps> = ({
           b === BarrierType.CanOverTrans
         ) {
           if (isEdgeObstacle(barriers, revealed, col, row, mapColumns, mapRows)) {
-            ctx.fillRect(col, row, 1, 1);
+            const dx = Math.round((col + (row & 1) * 0.5) * CELL_PX);
+            const dy = Math.round((row / 2) * CELL_PX);
+            ctx.fillRect(dx, dy, 1, 1);
           }
         }
       }
     }
 
-    // NPC / 敌人（1×1 px 方块）
+    // NPC / 敌人
     for (const char of characters) {
       const charTile = pixelToTile(char.x, char.y);
       const tileX = charTile.x;
@@ -190,28 +198,31 @@ export const FogOfWarMap: React.FC<FogOfWarMapProps> = ({
           ctx.fillStyle = "#ffff00";
           break;
       }
-      ctx.fillRect(tileX, tileY, 2, 2);
+      const ndx = Math.round((tileX + (tileY & 1) * 0.5) * CELL_PX);
+      const ndy = Math.round((tileY / 2) * CELL_PX);
+      ctx.fillRect(ndx, ndy, 2, 2);
     }
 
     // 玩家（青色 2×2 px 方块）
     ctx.fillStyle = "#00ffff";
-    ctx.fillRect(playerTileX, playerTileY, 2, 2);
-  }, [mapData, mapName, mapColumns, mapRows, playerTileX, playerTileY, characters]);
+    const pdx = Math.round((playerTileX + (playerTileY & 1) * 0.5) * CELL_PX);
+    const pdy = Math.round((playerTileY / 2) * CELL_PX);
+    ctx.fillRect(pdx, pdy, 2, 2);
+  }, [mapData, mapName, mapColumns, mapRows, canvasW, canvasH, playerTileX, playerTileY, characters]);
 
   if (!mapData || mapColumns === 0) return null;
 
   return (
     <canvas
       ref={canvasRef}
-      width={mapColumns}
-      height={mapRows}
+      width={canvasW}
+      height={canvasH}
       style={{
         position: "absolute",
         left: HUD_LEFT,
         top: HUD_TOP,
-        width: mapColumns * CELL_PX,
-        height: mapRows * CELL_PX,
-        imageRendering: "pixelated",
+        width: canvasW,
+        height: canvasH,
         pointerEvents: "none",
         zIndex: 1000,
       }}
