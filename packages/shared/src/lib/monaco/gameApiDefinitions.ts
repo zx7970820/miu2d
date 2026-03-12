@@ -88,6 +88,7 @@ export const LUA_API_FUNCTIONS: LuaAPIFunction[] = [
   { name: "SetNpcScript", signature: "(name: string, scriptFile: string)", description: "设置 NPC 脚本", category: "NPC" },
   { name: "ShowNpc", signature: "(name: string, visible: boolean)", description: "显示/隐藏 NPC", category: "NPC" },
   { name: "MergeNpc", signature: "(npcFile: string)", description: "合并 NPC 文件（阻塞）", category: "NPC", blocking: true },
+  { name: "LoadNpc", signature: "(fileName: string)", description: "加载 NPC 文件（阻塞）", category: "NPC", blocking: true },
   { name: "SaveNpc", signature: "(fileName?: string)", description: "保存 NPC（阻塞）", category: "NPC", blocking: true },
   { name: "NpcWatch", signature: "(char1: string, char2: string, watchType: number)", description: "NPC 注视", category: "NPC" },
   { name: "SetNpcAIEnabled", signature: "(enabled: boolean)", description: "设置 NPC AI 开关", category: "NPC" },
@@ -136,6 +137,7 @@ export const LUA_API_FUNCTIONS: LuaAPIFunction[] = [
   { name: "AddMagic", signature: "(magicFile: string)", description: "添加武功（阻塞）", category: "Magic", blocking: true },
   { name: "DeleteMagic", signature: "(magicFile: string)", description: "删除武功", category: "Magic" },
   { name: "SetMagicLevel", signature: "(magicFile: string, level: number)", description: "设置武功等级", category: "Magic" },
+  { name: "AddMagicExp", signature: "(magicFile: string, amount: number)", description: "增加武功经验", category: "Magic" },
   { name: "GetMagicLevel", signature: "(magicFile: string): number", description: "获取武功等级", category: "Magic" },
   { name: "ClearMagic", signature: "()", description: "清空武功", category: "Magic" },
   { name: "HasMagicFreeSpace", signature: "(): boolean", description: "是否有空闲武功栏", category: "Magic" },
@@ -168,6 +170,7 @@ export const LUA_API_FUNCTIONS: LuaAPIFunction[] = [
   { name: "ClearBody", signature: "()", description: "清除尸体", category: "Obj" },
   { name: "GetObjPos", signature: "(nameOrId: string): {x, y} | nil", description: "获取物体位置", category: "Obj" },
   { name: "SetObjOffset", signature: "(objName: string, x: number, y: number)", description: "设置物体偏移", category: "Obj" },
+  { name: "SetObjPos", signature: "(name: string, x: number, y: number)", description: "设置物体格子位置", category: "Obj" },
   { name: "SetObjKind", signature: "(objName: string, kind: number)", description: "设置物体类型", category: "Obj" },
 
   // ===== Camera =====
@@ -298,6 +301,90 @@ export const LUA_API_FUNCTIONS: LuaAPIFunction[] = [
   { name: "HideBottomWnd", signature: "()", description: "隐藏底部窗口（DSL别名 → HideInterface）", category: "Script" },
   { name: "ShowBottomWnd", signature: "()", description: "显示底部窗口（DSL别名 → ShowInterface）", category: "Script" },
   { name: "RandRun", signature: "(probability: number, script1: string, script2: string)", description: "按概率(0-99)随机执行两个脚本之一", category: "Script" },
+
+  // ===== Additional DSL aliases (registered in engine commands but missing from above) =====
+
+  // Player
+  { name: "PlayerGotoDir", signature: "(dir: number, steps: number)", description: "玩家朝方向走（DSL别名 → PlayerWalkToDir）", category: "Player", blocking: true },
+  { name: "PlayerRunToEx", signature: "(x: number, y: number)", description: "玩家跑到位置非阻塞（DSL别名 → PlayerRunToNonBlocking）", category: "Player" },
+  { name: "SetPlayerScn", signature: "()", description: "摄像机居中到玩家（DSL别名 → CenterCamera）", category: "Player" },
+  { name: "SavePlayer", signature: "(key: string)", description: "保存玩家快照（DSL别名 → SavePlayerSnapshot）", category: "Player" },
+  { name: "LoadPlayer", signature: "(index: number)", description: "加载玩家从存档（DSL别名 → LoadPlayerSnapshot）", category: "Player" },
+  { name: "GetPlayerExp", signature: "(): number", description: "获取玩家经验（DSL别名 → GetExp）", category: "Player" },
+  { name: "GetPlayerMagicLevel", signature: "(magicFile: string): number", description: "获取玩家武功等级", category: "Player" },
+  { name: "PlayerAddEmotion", signature: "(amount: number)", description: "增加玩家情感值（存根）", category: "Player" },
+  { name: "PlayerAddJustice", signature: "(amount: number)", description: "增加玩家正义值（存根）", category: "Player" },
+
+  // NPC
+  { name: "NpcGotoDir", signature: "(name: string, dir: number, steps: number)", description: "NPC 朝方向走（DSL别名 → NpcWalkToDir）", category: "NPC", blocking: true },
+  { name: "NpcSpecialActionEx", signature: "(name: string, asfFile: string)", description: "NPC 特殊动作阻塞（DSL别名 → NpcSpecialAction）", category: "NPC", blocking: true },
+  { name: "AddOneMagic", signature: "(name: string, magicFile: string)", description: "给 NPC 添加武功（DSL别名 → AddNpcMagic）", category: "NPC", blocking: true },
+  { name: "SetNpcRes", signature: "(name: string, resFile: string)", description: "设置 NPC 资源（DSL别名 → SetNpcResource）", category: "NPC" },
+  { name: "ChangeFlyIni", signature: "(name: string, magicFile: string)", description: "修改 NPC 飞行配置（DSL别名 → ChangeNpcFlyIni）", category: "NPC" },
+  { name: "ChangeFlyIni2", signature: "(name: string, magicFile: string)", description: "修改 NPC 飞行配置2（DSL别名 → ChangeNpcFlyIni2）", category: "NPC" },
+  { name: "AddFlyInis", signature: "(name: string, magicFile: string, distance: number)", description: "添加 NPC 飞行配置（DSL别名 → AddNpcFlyInis）", category: "NPC" },
+  { name: "FollowNpc", signature: "(follower: string, target: string)", description: "NPC 跟随另一角色（DSL别名 → NpcFollow）", category: "NPC" },
+  { name: "FollowPlayer", signature: "(name: string)", description: "NPC 跟随玩家（DSL别名 → NpcFollowPlayer）", category: "NPC" },
+  { name: "SetKeepAttack", signature: "(name: string, x: number, y: number)", description: "设置 NPC 持续攻击位置（DSL别名 → SetNpcKeepAttack）", category: "NPC" },
+  { name: "SetPartnerLevel", signature: "(name: string, level: number)", description: "设置伙伴等级（DSL别名 → SetNpcLevel）", category: "NPC" },
+
+  // Goods
+  { name: "AddRandGoods", signature: "(buyFileName: string)", description: "随机添加物品（DSL别名 → AddRandomGoods）", category: "Goods", blocking: true },
+  { name: "GetGoodsNumByName", signature: "(goodsName: string): number", description: "按名称获取物品数量（DSL别名 → GetGoodsCountByName）", category: "Goods" },
+  { name: "CheckFreeGoodsSpace", signature: "(): 0 | 1", description: "检查物品栏是否有空位（DSL别名 → HasGoodsFreeSpace）", category: "Goods" },
+  { name: "DelGoodByName", signature: "(name: string, count?: number)", description: "按名称删除物品（DSL别名 → DeleteGoodsByName）", category: "Goods" },
+  { name: "SaveGoods", signature: "(key: string)", description: "保存物品快照（DSL别名 → SaveGoodsSnapshot）", category: "Goods" },
+  { name: "LoadGoods", signature: "(key: string)", description: "加载物品快照（DSL别名 → LoadGoodsSnapshot）", category: "Goods" },
+
+  // Magic
+  { name: "CheckFreeMagicSpace", signature: "(): 0 | 1", description: "检查武功栏是否有空位（DSL别名 → HasMagicFreeSpace）", category: "Magic" },
+
+  // Memo
+  { name: "AddToMemo", signature: "(idOrText: number | string)", description: "按 ID 或文本添加备忘录（DSL别名 → AddMemoById）", category: "Memo", blocking: true },
+  { name: "DelMemo", signature: "(text: string)", description: "删除备忘录（DSL别名 → DeleteMemo）", category: "Memo" },
+  { name: "ClearMemo", signature: "()", description: "清空所有备忘录", category: "Memo" },
+
+  // Obj
+  { name: "DelCurObj", signature: "()", description: "删除当前触发物体（DSL别名 → DeleteCurrentObj）", category: "Obj" },
+  { name: "SetObjOfs", signature: "(name: string, x: number, y: number)", description: "设置物体偏移（DSL别名 → SetObjOffset）", category: "Obj" },
+  { name: "OpenObj", signature: "(nameOrId?: string)", description: "打开物体/箱子（DSL别名 → OpenBox）", category: "Obj" },
+
+  // Map
+  { name: "SetMapTrap", signature: "(trapIndex: number, trapFileName: string)", description: "设置陷阱（当前地图，DSL别名 → SetTrap）", category: "Map" },
+  { name: "SaveMapTrap", signature: "()", description: "保存地图陷阱（DSL别名 → SaveTrap）", category: "Map" },
+
+  // Effect
+  { name: "ChangeAsfColor", signature: "(r: number, g: number, b: number)", description: "改变精灵颜色（DSL别名 → ChangeSpriteColor）", category: "Effect" },
+  { name: "ShowRain", signature: "(level: number)", description: "按等级控制雨效果（0=停止）", category: "Effect" },
+  { name: "PetrifyMillisecond", signature: "(ms: number)", description: "石化效果（毫秒，DSL别名 → Petrify）", category: "Effect" },
+  { name: "PoisonMillisecond", signature: "(ms: number)", description: "中毒效果（毫秒，DSL别名 → Poison）", category: "Effect" },
+  { name: "FrozenMillisecond", signature: "(ms: number)", description: "冰冻效果（毫秒，DSL别名 → Frozen）", category: "Effect" },
+
+  // Audio
+  { name: "StopMovie", signature: "()", description: "停止播放视频", category: "Audio" },
+
+  // Dialog
+  { name: "Message", signature: "(text: string)", description: "显示消息（DSL别名 → ShowMessage）", category: "Dialog" },
+  { name: "DisplayMessage", signature: "(text: string)", description: "显示消息（DSL别名 → ShowMessage）", category: "Dialog" },
+  { name: "MessageBox", signature: "(text: string)", description: "显示消息框（DSL别名 → ShowMessage）", category: "Dialog" },
+
+  // Timer
+  { name: "HideTimerWnd", signature: "()", description: "隐藏计时器窗口（DSL别名 → HideTimer）", category: "Timer" },
+  { name: "SetTimeScript", signature: "(triggerSeconds: number, scriptFile: string)", description: "设置计时器触发脚本（DSL别名 → SetTimerScript）", category: "Timer" },
+
+  // Variable
+  { name: "GetPartnerIdx", signature: "(): number", description: "获取伙伴索引（DSL别名 → GetPartnerIndex）", category: "Variable" },
+  { name: "ClearAllVar", signature: "(...keepVars: string[])", description: "清空所有变量（DSL别名 → ClearAllVars）", category: "Variable" },
+
+  // Save
+  { name: "ClearAllSave", signature: "()", description: "清空所有存档（DSL别名 → ClearAllSaves）", category: "Save" },
+
+  // Script
+  { name: "Gamble", signature: "(cost: number, type: number)", description: "骰子赌博（DSL别名 → ShowGamble）", category: "Script", blocking: true },
+
+  // Legacy typo aliases (from original game source)
+  { name: "SetNpcMagicToUseWhenBeAtacked", signature: "(name: string, magicFile: string, dir: number)", description: "设置 NPC 受击武功（DSL拼写别名 → SetNpcMagicWhenAttacked）", category: "NPC" },
+  { name: "SetPlayerMagicToUseWhenBeAtacked", signature: "(magicFile: string, direction: number)", description: "设置玩家受击武功（DSL拼写别名 → SetPlayerMagicWhenAttacked）", category: "Player" },
 ];
 
 /**
