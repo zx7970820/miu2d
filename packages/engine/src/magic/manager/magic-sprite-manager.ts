@@ -117,7 +117,7 @@ export class MagicSpriteManager {
       createApplyContext: (sprite, targetRef) => this.createApplyContext(sprite, targetRef),
       createEndContext: (sprite) => this.createEndContext(sprite),
       startDestroyAnimation: (sprite) => this.updater.startDestroyAnimation(sprite),
-      createHitEffect: (sprite) => this.updater.createHitEffect(sprite),
+      createHitEffect: (sprite, pos) => this.updater.createHitEffect(sprite, pos),
       playSound: (path) => this.playSound(path),
       useMagic: (params) => this.useMagic(params),
     };

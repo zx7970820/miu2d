@@ -9,7 +9,7 @@ import type { Prisma } from "@prisma/client";
 import type { Save as PrismaSave } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { db } from "../../db/client";
-import { deleteFile, getPublicFileUrl, uploadFile } from "../../storage/s3";
+import { deleteFile, uploadFile } from "../../storage/s3";
 import { verifyGameOwnerAccess } from "../../utils/gameAccess";
 import { Logger } from "../../utils/logger.js";
 
@@ -395,11 +395,7 @@ export class SaveService {
   }
 
   private toOutput(row: Omit<PrismaSave, "data">) {
-    const screenshotKey = row.screenshot ?? undefined;
-    const screenshot =
-      screenshotKey && !isBase64DataUri(screenshotKey)
-        ? getPublicFileUrl(screenshotKey)
-        : screenshotKey;
+    const screenshot = row.screenshot ?? undefined;
 
     return {
       id: row.id,

@@ -21,6 +21,7 @@ export interface GameMenuPanelProps {
   // ---- save props ----
   gameSlug: string;
   canSave: boolean;
+  saveBlockedReason?: string;
   onCollectSaveData: () => {
     data: Record<string, unknown>;
     screenshot?: string;
@@ -47,6 +48,7 @@ export function GameMenuPanel({
   logoUrl,
   gameSlug,
   canSave,
+  saveBlockedReason,
   onCollectSaveData,
   onLoadSaveData,
   settingsProps,
@@ -121,6 +123,7 @@ export function GameMenuPanel({
               gameSlug={gameSlug}
               visible={visible}
               canSave={canSave}
+              saveBlockedReason={saveBlockedReason}
               onCollectSaveData={onCollectSaveData}
               onLoadSaveData={onLoadSaveData}
               onClose={onClose}

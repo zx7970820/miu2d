@@ -208,43 +208,40 @@ export class ScreenEffects {
   }
 
   /**
-   * Compute the dark overlay alpha for the current mainLum.
-   * Returns 0 when mainLum >= 31 (full brightness, no overlay).
+   * Compute the multiply-blend color for the current mainLum + mapTime.
+   * Drawn with multiply blend: final = scene * tint (black stays black, no hue injection).
    */
-  private mainLumOverlayAlpha(): number {
+  private mainLumMultiplyColor(): { r: number; g: number; b: number } | null {
     const l = this.state.mainLum;
-    if (l >= 31) return 0;
-    const lum = (l + 1) * (16 / 3) + 32; // 0-255; coefficient 16/3 makes l=20 equal old l=15
-    return (255 - lum) / 255;
-  }
-
-  /**
-   * Get the RGB tint color for the dark overlay based on map time of day.
-   */
-  private mainLumOverlayColor(): { r: number; g: number; b: number } {
+    if (l >= 31) return null;
+    const br = ((l + 1) * 7 + 32) / 255; // brightness factor 0–1
+    const c = (v: number) => Math.max(0, Math.min(255, Math.round(v * 255)));
     switch (this.state.mapTime) {
-      case 1: return { r: 0, g: 0, b: 30 };   // night: dark blue (C++ dtNight: 0,0,30)
-      case 2: return { r: 80, g: 70, b: 0 };  // dusk:  dark orange
-      case 3: return { r: 60, g: 0, b: 80 };  // dawn:  dark purple
-      default: return { r: 0, g: 0, b: 0 };    // day:   pure black
+      case 1: return { r: c(br * 0.70), g: c(br * 0.75), b: c(br * 1.00) }; // night: cool blue
+      case 2: return { r: c(br * 1.00), g: c(br * 0.82), b: c(br * 0.55) }; // dusk:  warm amber
+      case 3: return { r: c(br * 0.80), g: c(br * 0.75), b: c(br * 1.00) }; // dawn:  purple
+      default: return { r: c(br), g: c(br), b: c(br) };                       // day:   neutral dark
     }
   }
 
   /**
-   * Draw the mainLum dark overlay on top of the scene.
+   * Draw the mainLum color-grading pass on top of the scene.
+   * Uses multiply blend so dark areas stay dark; no hue bleeding into shadows.
    * Must be called AFTER map/sprite rendering, BEFORE fade/flash overlays.
    */
   drawDarkOverlay(renderer: Renderer, width: number, height: number): void {
-    const alpha = this.mainLumOverlayAlpha();
-    if (alpha <= 0) return;
-    const { r, g, b } = this.mainLumOverlayColor();
+    const tint = this.mainLumMultiplyColor();
+    if (!tint) return;
+    renderer.save();
+    renderer.setBlendMode("multiply");
     renderer.fillRect({
       x: 0,
       y: 0,
       width,
       height,
-      color: `rgba(${r}, ${g}, ${b}, ${alpha})`,
+      color: `rgb(${tint.r}, ${tint.g}, ${tint.b})`,
     });
+    renderer.restore();
   }
 
   /**

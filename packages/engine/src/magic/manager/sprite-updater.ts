@@ -759,13 +759,14 @@ export class SpriteUpdater {
 
   /**
    * 创建命中特效
+   * 爆炸位置锚定在目标角色所在格，而非精灵当前（可能已越过目标的）位置
    */
-  createHitEffect(sprite: MagicSprite): void {
+  createHitEffect(sprite: MagicSprite, position?: Vector2): void {
     if (!sprite.magic.vanishImage) return;
 
-    const effectSprite = sprite.createEffectSprite();
+    const effectSprite = sprite.createEffectSprite(position);
     this.callbacks.addEffectSprite(effectSprite);
-    this.callbacks.triggerExplodeMagic(sprite);
+    this.callbacks.triggerExplodeMagic(sprite, position);
   }
 
   /**

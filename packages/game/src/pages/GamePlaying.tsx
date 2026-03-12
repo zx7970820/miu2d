@@ -139,12 +139,12 @@ export function GamePlaying({
 
       const guiState = gui.getState();
       // 如果引擎有阻塞性 UI（对话框、选择、商店等），让事件自然流向引擎处理
+      // 小地图（littleMap）是独立的悬浮 HUD，不参与 ESC 逻辑
       const hasBlockingUI =
         guiState.dialog.isVisible ||
         guiState.selection.isVisible ||
         guiState.multiSelection.isVisible ||
-        guiState.panels.buy ||
-        guiState.panels.littleMap;
+        guiState.panels.buy;
 
       if (hasBlockingUI) {
         // 让事件正常传播到引擎
@@ -514,6 +514,11 @@ export function GamePlaying({
         onTabChange={setMenuTab}
         gameSlug={gameSlug}
         canSave={true}
+        saveBlockedReason={
+          engine?.getGameManager()?.guiManager?.isScriptRunning()
+            ? "剧情脚本运行中，请等待结束后再存档"
+            : undefined
+        }
         onCollectSaveData={collectSaveData}
         onLoadSaveData={loadSaveData}
         settingsProps={{

@@ -18,6 +18,8 @@ export interface WebSaveLoadPanelProps {
   visible: boolean;
   /** 是否允许存档（战斗中或未登录时 false） */
   canSave: boolean;
+  /** 存档被禁用的原因（如脚本运行中），设置后新建存档按钮禁用并显示提示 */
+  saveBlockedReason?: string;
   /** 嵌入模式：不渲染自带的遮罩和外壳，仅输出内容部分 */
   embedded?: boolean;
   /** 存档回调：收集当前游戏状态 */
@@ -59,6 +61,7 @@ export function WebSaveLoadPanel({
   gameSlug,
   visible,
   canSave,
+  saveBlockedReason,
   embedded = false,
   onCollectSaveData,
   onLoadSaveData,
@@ -233,24 +236,32 @@ export function WebSaveLoadPanel({
         <>
           {/* 新建存档区域 */}
           {canSave && (
-            <div className="px-6 py-3 border-b border-white/10 flex items-center gap-2">
-              <input
-                type="text"
-                value={saveName}
-                onChange={(e) => setSaveName(e.target.value)}
-                placeholder="输入存档名称（可选）"
-                className="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white
-                    placeholder-white/30 focus:outline-none focus:border-white/30"
-                maxLength={100}
-              />
-              <button
-                onClick={handleNewSave}
-                disabled={upsertMutation.isPending}
-                className="px-4 py-2 bg-blue-500/60 hover:bg-blue-500/80 disabled:opacity-40
-                    text-white text-sm rounded-lg transition-colors whitespace-nowrap"
-              >
-                {upsertMutation.isPending ? "保存中..." : "新建存档"}
-              </button>
+            <div className="px-6 py-3 border-b border-white/10 flex flex-col gap-1.5">
+              {saveBlockedReason && (
+                <p className="text-xs text-amber-300/80 flex items-center gap-1">
+                  <span>⚠️</span> {saveBlockedReason}
+                </p>
+              )}
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={saveName}
+                  onChange={(e) => setSaveName(e.target.value)}
+                  placeholder="输入存档名称（可选）"
+                  disabled={!!saveBlockedReason}
+                  className="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white
+                      placeholder-white/30 focus:outline-none focus:border-white/30 disabled:opacity-40 disabled:cursor-not-allowed"
+                  maxLength={100}
+                />
+                <button
+                  onClick={handleNewSave}
+                  disabled={upsertMutation.isPending || !!saveBlockedReason}
+                  className="px-4 py-2 bg-blue-500/60 hover:bg-blue-500/80 disabled:opacity-40 disabled:cursor-not-allowed
+                      text-white text-sm rounded-lg transition-colors whitespace-nowrap"
+                >
+                  {upsertMutation.isPending ? "保存中..." : "新建存档"}
+                </button>
+              </div>
             </div>
           )}
 
@@ -267,19 +278,11 @@ export function WebSaveLoadPanel({
                   save={save}
                   gameSlug={gameSlug}
                   isOperating={operatingId === save.id}
-                  confirmAction={confirmAction?.id === save.id ? confirmAction.type : null}
                   canSave={canSave}
                   onOverwrite={() => setConfirmAction({ type: "save", id: save.id })}
                   onLoad={() => setConfirmAction({ type: "load", id: save.id })}
                   onDelete={() => setConfirmAction({ type: "delete", id: save.id })}
                   onShare={() => handleShare(save.id, save.isShared)}
-                  onConfirm={() => {
-                    if (!confirmAction) return;
-                    if (confirmAction.type === "save") handleOverwriteSave(save.id);
-                    else if (confirmAction.type === "load") handleLoad(save.id);
-                    else if (confirmAction.type === "delete") handleDelete(save.id);
-                  }}
-                  onCancelConfirm={() => setConfirmAction(null)}
                 />
               ))
             )}
@@ -304,9 +307,24 @@ export function WebSaveLoadPanel({
     </>
   );
 
+  const pendingSave = confirmAction?.id ? savesQuery.data?.find((s) => s.id === confirmAction.id) : undefined;
+
+  const confirmDialog = confirmAction && confirmAction.type !== "share" && (
+    <ConfirmDialog
+      action={confirmAction.type}
+      saveName={pendingSave?.name}
+      onConfirm={() => {
+        if (confirmAction.type === "save" && confirmAction.id) handleOverwriteSave(confirmAction.id);
+        else if (confirmAction.type === "load" && confirmAction.id) handleLoad(confirmAction.id);
+        else if (confirmAction.type === "delete" && confirmAction.id) handleDelete(confirmAction.id);
+      }}
+      onCancel={() => setConfirmAction(null)}
+    />
+  );
+
   // 嵌入模式：仅返回内容
   if (embedded) {
-    return content;
+    return <>{content}{confirmDialog}</>;
   }
 
   // 独立模式：包含遮罩和外壳
@@ -332,6 +350,61 @@ export function WebSaveLoadPanel({
 
         {content}
       </div>
+      {confirmDialog}
+    </div>
+  );
+}
+
+function ConfirmDialog({
+  action,
+  saveName,
+  onConfirm,
+  onCancel,
+}: {
+  action: "save" | "load" | "delete";
+  saveName?: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  const meta = {
+    load:   { title: "读取存档", desc: "将用此存档覆盖当前游戏进度，确定要读档吗？",  confirmCls: "bg-green-500/70 hover:bg-green-500/90", label: "确认读档", icon: <span className="text-blue-300 text-lg leading-none">ℹ️</span> },
+    save:   { title: "覆盖存档", desc: "将用当前游戏状态覆盖此存档，此操作无法撤销。", confirmCls: "bg-blue-500/60 hover:bg-blue-500/80",  label: "确认覆盖", icon: <span className="text-lg leading-none">⚠️</span> },
+    delete: { title: "删除存档", desc: "删除后无法恢复，确定要删除吗？",              confirmCls: "bg-red-500/60  hover:bg-red-500/80",  label: "确认删除", icon: <span className="text-lg leading-none">🗑️</span> },
+  }[action];
+
+  return (
+    <div
+      className="fixed inset-0 z-[1300] flex items-center justify-center"
+      onClick={onCancel}
+    >
+      <div
+        className="absolute inset-0 bg-black/75"
+        style={{ backdropFilter: "blur(40px)", WebkitBackdropFilter: "blur(40px)" }}
+      />
+      <div
+        className="relative w-[340px] rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl p-6"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3 className="flex items-center gap-2 text-base font-semibold text-white/90 mb-1">{meta.icon}{meta.title}</h3>
+        {saveName && (
+          <p className="text-xs text-white/40 mb-3 truncate">「{saveName}」</p>
+        )}
+        <p className="text-sm text-white/60 mb-5">{meta.desc}</p>
+        <div className="flex gap-2 justify-end">
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 text-sm bg-white/10 text-white/60 rounded-lg hover:bg-white/20 transition-colors"
+          >
+            取消
+          </button>
+          <button
+            onClick={onConfirm}
+            className={`px-4 py-2 text-sm text-white rounded-lg transition-colors ${meta.confirmCls}`}
+          >
+            {meta.label}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -340,26 +413,20 @@ function SaveSlotCard({
   save,
   gameSlug,
   isOperating,
-  confirmAction,
   canSave,
   onOverwrite,
   onLoad,
   onDelete,
   onShare,
-  onConfirm,
-  onCancelConfirm,
 }: {
   save: SaveSlot;
   gameSlug: string;
   isOperating: boolean;
-  confirmAction: "save" | "load" | "delete" | "share" | null;
   canSave: boolean;
   onOverwrite: () => void;
   onLoad: () => void;
   onDelete: () => void;
   onShare: () => void;
-  onConfirm: () => void;
-  onCancelConfirm: () => void;
 }) {
   const formatDate = (dateStr: string) => {
     try {
@@ -375,14 +442,11 @@ function SaveSlotCard({
     }
   };
 
-  const confirmLabel =
-    confirmAction === "delete" ? "删除" : confirmAction === "save" ? "覆盖" : "读档";
-
   return (
     <div className="rounded-xl bg-white/5 border border-white/[0.06] overflow-hidden hover:bg-white/10 transition-colors">
       <div className="flex gap-3 px-3 py-2.5">
         {/* 截图 */}
-        <div className="w-16 h-12 rounded-lg overflow-hidden bg-black/30 flex-shrink-0">
+        <div className="relative w-16 h-12 rounded-lg overflow-hidden bg-black/30 flex-shrink-0">
           {save.screenshot ? (
             <img
               src={save.screenshot.startsWith("data:") ? save.screenshot : getS3Url(save.screenshot)}
@@ -394,6 +458,20 @@ function SaveSlotCard({
               空
             </div>
           )}
+          {save.isShared && (
+            <>
+              <div
+                className="absolute bottom-0 right-0 w-0 h-0 pointer-events-none"
+                style={{
+                  borderLeft: "22px solid transparent",
+                  borderBottom: "22px solid rgba(34,197,94,0.85)",
+                }}
+              />
+              <span className="absolute bottom-0.5 right-0.5 text-[9px] leading-none pointer-events-none select-none">
+                🔗
+              </span>
+            </>
+          )}
         </div>
 
         {/* 信息 + 操作 */}
@@ -403,11 +481,6 @@ function SaveSlotCard({
             <span className="text-sm text-white/80 font-medium truncate min-w-0 flex-1">
               {save.name}
             </span>
-            {save.isShared && (
-              <span className="text-[10px] leading-none px-1.5 py-0.5 bg-green-500/20 text-green-300 rounded flex-shrink-0">
-                已分享
-              </span>
-            )}
             <span className="text-[11px] text-white/25 whitespace-nowrap flex-shrink-0">
               {formatDate(save.updatedAt)}
             </span>
@@ -471,31 +544,6 @@ function SaveSlotCard({
           </div>
         </div>
       </div>
-
-      {/* 确认操作栏 */}
-      {confirmAction && !isOperating && (
-        <div className="px-3 py-2 border-t border-white/5 bg-white/[0.03] flex items-center justify-between">
-          <span className="text-xs text-white/40">确认{confirmLabel}此存档？</span>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={onConfirm}
-              className={`px-2.5 py-1 text-xs rounded transition-colors ${
-                confirmAction === "delete"
-                  ? "bg-red-500/50 text-white hover:bg-red-500/70"
-                  : "bg-blue-500/50 text-white hover:bg-blue-500/70"
-              }`}
-            >
-              确认
-            </button>
-            <button
-              onClick={onCancelConfirm}
-              className="px-2.5 py-1 text-xs bg-white/10 text-white/50 rounded hover:bg-white/20 transition-colors"
-            >
-              取消
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* 已分享链接 */}
       {save.isShared && save.shareCode && (

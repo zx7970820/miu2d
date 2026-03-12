@@ -47,7 +47,7 @@ export interface CollisionCallbacks {
   createApplyContext(sprite: MagicSprite, targetRef: CharacterRef): ApplyContext | null;
   createEndContext(sprite: MagicSprite): EndContext | null;
   startDestroyAnimation(sprite: MagicSprite): void;
-  createHitEffect(sprite: MagicSprite): void;
+  createHitEffect(sprite: MagicSprite, position?: Vector2): void;
   playSound(soundPath: string, position?: Vector2): void;
   useMagic(params: {
     userId: string;
@@ -395,7 +395,7 @@ export class MagicCollisionHandler implements CollisionHandler {
         };
       }
 
-      // 播放命中特效
+      // 播放命中特效（Ball 弹跳：位置已被微调，保持当前精灵位置）
       this.callbacks.createHitEffect(sprite);
 
       logger.log(
@@ -411,10 +411,13 @@ export class MagicCollisionHandler implements CollisionHandler {
     }
 
     // 处理穿透或销毁
-    // Reference: 穿透不销毁，粘附不销毁，寄生时只进入销毁动画但不真正销毁
+    // 对齐：在创建特效 / 开始销毁动画前，将精灵位置 snap 到目标像素坐标
+    const targetPos = character.pixelPosition;
+
     if (sprite.magic.passThrough > 0) {
       if (sprite.magic.vanishImage) {
-        this.callbacks.createHitEffect(sprite);
+        // 穿透命中特效显示在目标位置
+        this.callbacks.createHitEffect(sprite, targetPos);
       }
       // 穿透后移动到邻居格子
       if (sprite.velocity > 0 && (sprite.direction.x !== 0 || sprite.direction.y !== 0)) {
@@ -427,8 +430,11 @@ export class MagicCollisionHandler implements CollisionHandler {
       // Parasitic 寄生状态：进入销毁动画但不立即销毁
       // Reference: 寄生后 destroy=true 但 _parasitiferCharacter != null 时不真正销毁
       // 动画会无限播放，直到目标死亡或达到最大伤害
+      sprite.positionInWorld = targetPos;
       this.callbacks.startDestroyAnimation(sprite);
     } else if (shouldDestroy) {
+      // 将精灵 snap 到目标位置，确保消失动画播放在命中点而非飞行越过点
+      sprite.positionInWorld = targetPos;
       this.callbacks.startDestroyAnimation(sprite);
     }
 
@@ -456,8 +462,8 @@ export class MagicCollisionHandler implements CollisionHandler {
       return;
     }
 
-    // 播放命中特效
-    this.callbacks.createHitEffect(sprite);
+    // 播放命中特效（锚定在被命中的角色位置）
+    this.callbacks.createHitEffect(sprite, hitedCharacter.pixelPosition);
 
     // 记录已命中的角色
     sprite.addLeapedCharacter(hitedCharId);
