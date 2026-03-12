@@ -234,6 +234,7 @@ export class UIBridgeImpl implements UIBridge {
       const message: UIMessageState = {
         text: event.messageText,
         isVisible: event.messageVisible,
+        showKey: event.showKey,
       };
       this.notifySubscribers("onMessageChange", message);
     });
@@ -687,7 +688,7 @@ export class UIBridgeImpl implements UIBridge {
       dialog: this.deps.state.getDialogState(),
       selection: this.deps.state.getSelectionState(),
       multiSelection: this.deps.state.getMultiSelectionState(),
-      message: { text: "", isVisible: false },
+      message: { text: "", isVisible: false, showKey: 0 },
       goods: this.buildGoodsState(),
       magic: this.buildMagicState(),
       shop: this.buildShopState(),

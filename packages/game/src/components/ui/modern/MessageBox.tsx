@@ -4,17 +4,21 @@
 import type React from "react";
 import { useEffect, useState } from "react";
 import { useGameUIContext } from "../../../contexts";
-import { borderRadius, glassEffect, modernColors, spacing, typography } from "./theme";
+import { borderRadius, glassEffect, modernColors, spacing, transitions, typography } from "./theme";
+
+const BOTTOM_BAR_H = 64; // BottomBar 高度，与 BottomBar.tsx 保持一致
+const MSG_BOTTOM_GAP = 10; // 与底部栏之间的间距
 
 interface MessageBoxProps {
   isVisible: boolean;
   message: string;
+  /** 每次 showMessage() 调用时自增，确保相同文本重复触发时动画也重新播放 */
+  showKey?: number;
 }
 
-export const MessageBox: React.FC<MessageBoxProps> = ({ isVisible, message }) => {
+export const MessageBox: React.FC<MessageBoxProps> = ({ isVisible, message, showKey }) => {
   const { screenWidth } = useGameUIContext();
   const [phase, setPhase] = useState<"hidden" | "in" | "visible" | "out">("hidden");
-
   useEffect(() => {
     if (!isVisible || !message) {
       setPhase("hidden");
@@ -32,7 +36,9 @@ export const MessageBox: React.FC<MessageBoxProps> = ({ isVisible, message }) =>
       clearTimeout(outTimer);
       clearTimeout(hideTimer);
     };
-  }, [isVisible, message]);
+    // showKey 确保相同文本重复调用时也能重新触发动画
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showKey, message]);
 
   if (phase === "hidden" || !message) return null;
 
@@ -44,28 +50,26 @@ export const MessageBox: React.FC<MessageBoxProps> = ({ isVisible, message }) =>
       style={{
         position: "absolute",
         left: "50%",
-        bottom: 180,
+        bottom: BOTTOM_BAR_H + MSG_BOTTOM_GAP,
         transform: `translateX(-50%) translateY(${isEntering ? 12 : isLeaving ? -4 : 0}px)`,
         maxWidth: Math.min(420, screenWidth - 40),
         minWidth: 180,
         pointerEvents: "none",
         opacity: isEntering || isLeaving ? 0 : 1,
-        transition: "opacity 0.25s ease, transform 0.25s ease",
+        transition: `opacity 0.25s ease, transform 0.25s ease`,
         zIndex: 2000,
-        // 外发光
         filter: "drop-shadow(0 4px 20px rgba(0,0,0,0.5))",
       }}
     >
-      {/* 背景卡片 */}
+      {/* 毛玻璃背景卡片 */}
       <div
         style={{
-          background: "rgba(12, 16, 28, 0.88)",
-          backdropFilter: "blur(20px)",
-          WebkitBackdropFilter: "blur(20px)",
+          ...glassEffect.dark,
           borderRadius: borderRadius.lg,
-          border: "1px solid rgba(255,255,255,0.1)",
+          border: "1px solid rgba(212,175,55,0.3)",
           overflow: "hidden",
           display: "flex",
+          transition: transitions.fast,
         }}
       >
         {/* 左侧金色强调条 */}

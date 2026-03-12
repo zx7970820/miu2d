@@ -5,6 +5,11 @@
  */
 
 import { applyFlatDataToCharacter } from "../character/character-config";
+import { getNpcLevelDetail } from "../character/level/level-manager";
+import {
+  getDefaultNpcLevelKey,
+  loadLevelConfig,
+} from "../character/level/level-config-loader";
 import { logger } from "../core/logger";
 import type { CharacterConfig, Direction, Vector2 } from "../core/types";
 import { getGameSlug, loadSceneNpcEntries } from "../data/game-data-api";
@@ -200,6 +205,34 @@ export async function createNpcFromData(
   // 等级配置（异步加载配置文件）
   if (npc.levelIniFile) {
     await npc.levelManager.setLevelFile(npc.levelIniFile);
+  }
+
+  // 如果敌对 NPC 最大血量为 0，从等级配置恢复默认值
+  // level-npc.ini 中 NPC 的最大血量存储在 `life` 字段（非 `lifeMax`）
+  logger.debug(
+    `[NpcManager] NPC ${npc.name} check: isEnemy=${npc.isEnemy} lifeMax=${npc.lifeMax} level=${npc.level}`
+  );
+  if (npc.isEnemy && npc.lifeMax === 0) {
+    let levelDetail =
+      npc.levelManager.getLevelDetail(npc.level) ?? getNpcLevelDetail(npc.level);
+    // 全局 NPC 等级配置可能尚未加载（initNpcLevelConfig 是 fire-and-forget），直接 await 加载
+    if (!levelDetail) {
+      const cfg = await loadLevelConfig(getDefaultNpcLevelKey());
+      levelDetail = cfg?.get(npc.level) ?? null;
+    }
+    // level-npc.ini 使用 `life` 字段存储 NPC 最大血量（而非 `lifeMax`）
+    const restoredLife = levelDetail?.life ?? levelDetail?.lifeMax ?? 0;
+    if (restoredLife > 0) {
+      npc.setLifeMax(restoredLife);
+      npc.life = npc.lifeMax;
+      logger.log(
+        `[NpcManager] NPC ${npc.name} lifeMax=0, restored from level ${npc.level}: lifeMax=${npc.lifeMax}`
+      );
+    } else {
+      logger.warn(
+        `[NpcManager] NPC ${npc.name} lifeMax=0 at level ${npc.level}, no level data found (levelDetail=${levelDetail ? "found" : "null"})`
+      );
+    }
   }
 
   return npc;

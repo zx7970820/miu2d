@@ -32,6 +32,7 @@ export class GuiManager {
   private typewriterSpeed: number = 50; // ms per character
   private isMoviePlaying: boolean = false; // Track movie playback state
   private pendingMovieFile: string | null = null; // Pending movie file for late subscribers
+  private messageShowKey = 0;
 
   constructor(
     private events: TypedEventEmitter<GameEventMap>,
@@ -76,6 +77,7 @@ export class GuiManager {
       messageText: this.state.hud.messageText,
       messageVisible: this.state.hud.messageVisible,
       messageTimer: this.state.hud.messageTimer,
+      showKey: this.messageShowKey,
     } as UIMessageChangeEvent);
   }
 
@@ -317,6 +319,7 @@ export class GuiManager {
   }
 
   showMessage(text: string, duration: number = 3000): void {
+    this.messageShowKey++;
     this.state.hud.messageText = text;
     this.state.hud.messageVisible = true;
     this.state.hud.messageTimer = duration;

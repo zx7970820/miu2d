@@ -70,6 +70,8 @@ export interface UIMessageChangeEvent {
   messageText: string;
   messageVisible: boolean;
   messageTimer: number;
+  /** 每次 showMessage() 自增，用于区分「相同文本重复触发」 */
+  showKey: number;
 }
 
 /**

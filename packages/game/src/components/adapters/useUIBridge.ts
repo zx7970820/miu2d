@@ -115,6 +115,7 @@ const defaultMultiSelection: UIMultiSelectionState = {
 const defaultMessage: UIMessageState = {
   text: "",
   isVisible: false,
+  showKey: 0,
 };
 
 const defaultGoods: UIGoodsState = {

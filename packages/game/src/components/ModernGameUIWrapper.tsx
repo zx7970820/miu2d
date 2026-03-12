@@ -375,6 +375,7 @@ export const ModernGameUIWrapper: React.FC<ModernGameUIWrapperProps> = ({
       <MessageBox
         isVisible={message?.isVisible ?? false}
         message={message?.text ?? ""}
+        showKey={message?.showKey ?? 0}
       />
 
       {/* 商店面板 */}

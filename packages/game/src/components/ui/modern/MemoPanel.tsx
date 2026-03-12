@@ -68,7 +68,7 @@ const MemoItem: React.FC<{ text: string; index: number; isLast: boolean }> = ({
         display: "flex",
         alignItems: "flex-start",
         gap: spacing.sm,
-        padding: `${spacing.sm}px ${spacing.lg}px`,
+        padding: `${spacing.xs}px ${spacing.lg}px`,
         borderBottom: !isLast ? `1px solid ${modernColors.border.glass}40` : "none",
         background: isHovered ? modernColors.bg.hover : "transparent",
         transition: transitions.fast,
@@ -96,7 +96,7 @@ const MemoItem: React.FC<{ text: string; index: number; isLast: boolean }> = ({
         style={{
           fontSize: typography.fontSize.sm,
           color: isHovered ? modernColors.text.primary : modernColors.text.secondary,
-          lineHeight: 1.7,
+          lineHeight: 1.45,
           transition: transitions.fast,
         }}
       >
@@ -119,7 +119,7 @@ export const MemoPanel: React.FC<MemoPanelProps> = ({ isVisible, memos, onClose 
       width: panelWidth,
       display: "flex",
       flexDirection: "column",
-      maxHeight: "calc(100vh - 120px)",
+      maxHeight: "min(520px, calc(100vh - 120px))",
       // 毛玻璃效果
       ...glassEffect.standard,
       borderRadius: borderRadius.xl,

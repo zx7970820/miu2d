@@ -318,6 +318,8 @@ export interface UIShopState {
 export interface UIMessageState {
   readonly text: string;
   readonly isVisible: boolean;
+  /** 每次 showMessage() 自增，用于区分「相同文本重复触发」 */
+  readonly showKey: number;
 }
 
 // ============= 备忘录 =============

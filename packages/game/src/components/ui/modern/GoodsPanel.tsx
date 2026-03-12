@@ -5,7 +5,7 @@
 
 import type { UIGoodData } from "@miu2d/engine/gui/ui-types";
 import type React from "react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useGameUIContext } from "../../../contexts";
 import type { TouchDragData } from "../../../contexts";
 import type { DragData, GoodItemData } from "../classic";
@@ -268,6 +268,12 @@ export const GoodsPanel: React.FC<GoodsPanelProps> = ({
   const { screenWidth } = useGameUIContext();
   const [scrollOffset, setScrollOffset] = useState(0);
 
+  // 滚动条拖拽状态
+  const [isDraggingScrollbar, setIsDraggingScrollbar] = useState(false);
+  const scrollbarTrackRef = useRef<HTMLDivElement>(null);
+  const dragStartY = useRef(0);
+  const dragStartOffset = useRef(0);
+
   // 面板配置
   const panelWidth = 300;
   const columns = 5;
@@ -371,6 +377,57 @@ export const GoodsPanel: React.FC<GoodsPanelProps> = ({
       onItemHover?.(item?.good ?? null, e.clientX, e.clientY);
     },
     [items, scrollOffset, onItemHover]
+  );
+
+  // 滚动条拖拽的全局鼠标事件
+  useEffect(() => {
+    if (!isDraggingScrollbar) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const track = scrollbarTrackRef.current;
+      if (!track) return;
+      const trackRect = track.getBoundingClientRect();
+      const trackHeight = trackRect.height;
+      const dy = e.clientY - dragStartY.current;
+      const rowsPerPx = maxScrollRows / (trackHeight * 0.8); // thumb 占 20%
+      const newOffset = Math.round(dragStartOffset.current + dy * rowsPerPx);
+      setScrollOffset(Math.max(0, Math.min(maxScrollRows, newOffset)));
+    };
+
+    const handleMouseUp = () => {
+      setIsDraggingScrollbar(false);
+    };
+
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isDraggingScrollbar, maxScrollRows]);
+
+  const handleScrollbarThumbMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDraggingScrollbar(true);
+      dragStartY.current = e.clientY;
+      dragStartOffset.current = scrollOffset;
+    },
+    [scrollOffset]
+  );
+
+  const handleScrollbarTrackClick = useCallback(
+    (e: React.MouseEvent) => {
+      if (isDraggingScrollbar) return;
+      const track = scrollbarTrackRef.current;
+      if (!track) return;
+      const rect = track.getBoundingClientRect();
+      const clickRatio = (e.clientY - rect.top) / rect.height;
+      const newOffset = Math.round(clickRatio * maxScrollRows);
+      setScrollOffset(Math.max(0, Math.min(maxScrollRows, newOffset)));
+    },
+    [isDraggingScrollbar, maxScrollRows]
   );
 
   // 统计物品数量
@@ -508,28 +565,36 @@ export const GoodsPanel: React.FC<GoodsPanelProps> = ({
           })}
         </div>
 
-        {/* 滚动指示器 */}
+        {/* 滚动条 */}
         {maxScrollRows > 0 && (
           <div
+            ref={scrollbarTrackRef}
+            onClick={handleScrollbarTrackClick}
             style={{
               position: "absolute",
-              right: 4,
+              right: 2,
               top: spacing.md,
               bottom: spacing.md,
-              width: 4,
-              background: "rgba(0, 0, 0, 0.3)",
-              borderRadius: 2,
+              width: 10,
+              background: "rgba(0, 0, 0, 0.35)",
+              borderRadius: 5,
+              cursor: "pointer",
             }}
           >
             <div
+              onMouseDown={handleScrollbarThumbMouseDown}
               style={{
                 position: "absolute",
                 top: `${(scrollOffset / maxScrollRows) * 80}%`,
                 width: "100%",
                 height: "20%",
-                background: wuxiaAccent.gold,
-                borderRadius: 2,
-                boxShadow: `0 0 4px ${wuxiaAccent.gold}`,
+                background: isDraggingScrollbar
+                  ? wuxiaAccent.goldBright
+                  : wuxiaAccent.gold,
+                borderRadius: 5,
+                boxShadow: `0 0 6px ${wuxiaAccent.gold}`,
+                cursor: "ns-resize",
+                transition: isDraggingScrollbar ? "none" : "top 0.1s ease",
               }}
             />
           </div>

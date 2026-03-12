@@ -223,7 +223,7 @@ export class ScreenEffects {
    */
   private mainLumOverlayColor(): { r: number; g: number; b: number } {
     switch (this.state.mapTime) {
-      case 1: return { r: 0, g: 10, b: 60 };  // night: dark blue
+      case 1: return { r: 0, g: 0, b: 30 };   // night: dark blue (C++ dtNight: 0,0,30)
       case 2: return { r: 80, g: 70, b: 0 };  // dusk:  dark orange
       case 3: return { r: 60, g: 0, b: 80 };  // dawn:  dark purple
       default: return { r: 0, g: 0, b: 0 };    // day:   pure black
