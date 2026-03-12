@@ -9,9 +9,9 @@
  * - Tab 键切换显示/隐藏
  */
 
-import { TILE_HEIGHT, TILE_WIDTH } from "@miu2d/engine/core/constants";
 import type { Vector2 } from "@miu2d/engine/core/types";
 import { BarrierType, type MiuMapData } from "@miu2d/engine/map/types";
+import { pixelToTile } from "@miu2d/engine/utils/coordinate";
 import type React from "react";
 import { useEffect, useRef } from "react";
 
@@ -104,7 +104,7 @@ function isEdgeObstacle(
 const REVEAL_RADIUS = 15;
 
 /** 每个 tile 对应的 CSS 像素数（固定，不随地图大小变化） */
-const CELL_PX = 2;
+const CELL_PX = 1.4;
 
 /** HUD 距屏幕左上角的偏移 */
 const HUD_LEFT = 10;
@@ -130,9 +130,10 @@ export const FogOfWarMap: React.FC<FogOfWarMapProps> = ({
   const mapColumns = mapData?.mapColumnCounts ?? 0;
   const mapRows = mapData?.mapRowCounts ?? 0;
 
-  // 玩家 tile 坐标
-  const playerTileX = Math.floor(playerPosition.x / TILE_WIDTH);
-  const playerTileY = Math.floor(playerPosition.y / TILE_HEIGHT);
+  // 玩家 tile 坐标（等角坐标系：行间距 16px，有菱形交错，必须用 pixelToTile）
+  const playerTile = pixelToTile(playerPosition.x, playerPosition.y);
+  const playerTileX = playerTile.x;
+  const playerTileY = playerTile.y;
 
   // 绘制：1px = 1 tile，全部整数坐标，不会有亚像素模糊
   useEffect(() => {
@@ -170,10 +171,11 @@ export const FogOfWarMap: React.FC<FogOfWarMapProps> = ({
       }
     }
 
-    // NPC / 敌人（2×2 px 方块）
+    // NPC / 敌人（1×1 px 方块）
     for (const char of characters) {
-      const tileX = Math.floor(char.x / TILE_WIDTH);
-      const tileY = Math.floor(char.y / TILE_HEIGHT);
+      const charTile = pixelToTile(char.x, char.y);
+      const tileX = charTile.x;
+      const tileY = charTile.y;
       if (tileX < 0 || tileX >= mapColumns || tileY < 0 || tileY >= mapRows) continue;
       if (revealed[tileX + tileY * mapColumns] !== 1) continue;
 
@@ -191,9 +193,9 @@ export const FogOfWarMap: React.FC<FogOfWarMapProps> = ({
       ctx.fillRect(tileX, tileY, 2, 2);
     }
 
-    // 玩家（青色 3×3 px 方块）
+    // 玩家（青色 2×2 px 方块）
     ctx.fillStyle = "#00ffff";
-    ctx.fillRect(playerTileX - 1, playerTileY - 1, 3, 3);
+    ctx.fillRect(playerTileX, playerTileY, 2, 2);
   }, [mapData, mapName, mapColumns, mapRows, playerTileX, playerTileY, characters]);
 
   if (!mapData || mapColumns === 0) return null;
