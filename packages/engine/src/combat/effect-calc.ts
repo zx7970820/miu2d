@@ -82,28 +82,28 @@ export function addMagicEffect(belongCharacter: EffectCharacter, effect: number)
 }
 
 /**
- * 命中率检查（基于闪避值）
+ * 命中率检查（比例制，含 5% 兜底）
  *
- * hitRatio 范围 5%~100%
- * - 攻方闪避 <= 守方闪避：hitRatio = 5% + (攻/守) × 50%
- * - 攻方闪避 >  守方闪避：hitRatio = 55% + min(差值/100, 1) × 45%
+ * Reference: JxqyHD MagicSprite.cs CharacterHited
+ *
+ * 设 a = attacker.realEvade，t = target.realEvade：
+ *   if t >= a: hitRatio = 5% + (a/t) × 50%          （最低 5%，最高 55%）
+ *   else:      hitRatio = 5% + 50% + clamp((a-t)/100, 0,1) × 45%  （最高 100%）
+ *
+ * 玄慈(29) 打 31 级玩家(137)：5% + (29/137)×50% ≈ 15.6%
  */
 export function calcMagicHit(
   target: { realEvade: number },
   attacker: { realEvade: number } | null
 ): boolean {
-  const targetEvade = target.realEvade;
-  const attackerEvade = attacker?.realEvade ?? 0;
-  const MAX_OFFSET = 100;
-  const BASE_HIT_RATIO = 0.05;
-  const BELOW_RATIO = 0.5;
-  const UP_RATIO = 0.45;
-  let hitRatio = BASE_HIT_RATIO;
-  if (targetEvade >= attackerEvade) {
-    hitRatio += targetEvade > 0 ? (attackerEvade / targetEvade) * BELOW_RATIO : BELOW_RATIO;
+  const a = attacker?.realEvade ?? 0;
+  const t = target.realEvade;
+  let hitRatio: number;
+  if (t >= a) {
+    hitRatio = 0.05 + (t > 0 ? a / t : 1) * 0.5;
   } else {
-    const upOffsetRatio = Math.min(1, (attackerEvade - targetEvade) / MAX_OFFSET);
-    hitRatio += BELOW_RATIO + upOffsetRatio * UP_RATIO;
+    const upOffset = Math.min((a - t) / 100, 1);
+    hitRatio = 0.05 + 0.5 + upOffset * 0.45;
   }
   return Math.floor(Math.random() * 101) <= Math.floor(hitRatio * 100);
 }

@@ -395,20 +395,21 @@ export class Player extends PlayerCombat {
    * magic level up, add player properties
    */
   protected override handleMagicLevelUp(oldMagic: MagicData, newMagic: MagicData): void {
-    // LifeMax += info.TheMagic.LifeMax; etc.
-    this.lifeMax += newMagic.lifeMax || 0;
-    this.thewMax += newMagic.thewMax || 0;
-    this.manaMax += newMagic.manaMax || 0;
-    this.attack += newMagic.attack || 0;
-    this.defend += newMagic.defend || 0;
-    this.evade += newMagic.evade || 0;
-    this.attack2 += newMagic.attack2 || 0;
-    this.defend2 += newMagic.defend2 || 0;
-    this.attack3 += newMagic.attack3 || 0;
-    this.defend3 += newMagic.defend3 || 0;
-    this._addLifeRestorePercent += newMagic.addLifeRestorePercent || 0;
-    this._addThewRestorePercent += newMagic.addThewRestorePercent || 0;
-    this._addManaRestorePercent += newMagic.addManaRestorePercent || 0;
+    // Use delta (new level - old level), matching C# logic:
+    // Defend += (detail.Defend - currentDetail.Defend)
+    this.lifeMax += (newMagic.lifeMax || 0) - (oldMagic.lifeMax || 0);
+    this.thewMax += (newMagic.thewMax || 0) - (oldMagic.thewMax || 0);
+    this.manaMax += (newMagic.manaMax || 0) - (oldMagic.manaMax || 0);
+    this.attack += (newMagic.attack || 0) - (oldMagic.attack || 0);
+    this.defend += (newMagic.defend || 0) - (oldMagic.defend || 0);
+    this.evade += (newMagic.evade || 0) - (oldMagic.evade || 0);
+    this.attack2 += (newMagic.attack2 || 0) - (oldMagic.attack2 || 0);
+    this.defend2 += (newMagic.defend2 || 0) - (oldMagic.defend2 || 0);
+    this.attack3 += (newMagic.attack3 || 0) - (oldMagic.attack3 || 0);
+    this.defend3 += (newMagic.defend3 || 0) - (oldMagic.defend3 || 0);
+    this._addLifeRestorePercent += (newMagic.addLifeRestorePercent || 0) - (oldMagic.addLifeRestorePercent || 0);
+    this._addThewRestorePercent += (newMagic.addThewRestorePercent || 0) - (oldMagic.addThewRestorePercent || 0);
+    this._addManaRestorePercent += (newMagic.addManaRestorePercent || 0) - (oldMagic.addManaRestorePercent || 0);
 
     // FlyIni 替换逻辑
     // if (oldMagic.FlyIni != newMagic.FlyIni) { RemoveFlyIniReplace(old); AddFlyIniReplace(new); }
@@ -471,6 +472,88 @@ export class Player extends PlayerCombat {
     this.defend = detail.defend;
     this.evade = detail.evade;
     this.levelUpExp = detail.levelUpExp;
+  }
+
+  /**
+   * 从等级配置 + 武功加成 + 装备加成重新计算基础属性。
+   * 存档加载完成后调用，修正因历史 bug 导致的累计错误值。
+   * 参考 C# 逻辑：装备时加 delta，而非每次加绝对值。
+   */
+  recalculateBaseStats(): void {
+    const levelConfig = this.levelManager.getLevelConfig();
+    if (!levelConfig) {
+      logger.warn("[Player] recalculateBaseStats: no level config loaded, skipping");
+      return;
+    }
+    const detail = levelConfig.get(this.level);
+    if (!detail) {
+      logger.warn(`[Player] recalculateBaseStats: no config for level ${this.level}, skipping`);
+      return;
+    }
+
+    const savedLife = this.life;
+    const savedThew = this.thew;
+    const savedMana = this.mana;
+
+    // Base from level config
+    let lifeMax = detail.lifeMax;
+    let thewMax = detail.thewMax;
+    let manaMax = detail.manaMax;
+    let attack = detail.attack;
+    let defend = detail.defend;
+    let evade = detail.evade;
+    let attack2 = 0;
+    let defend2 = 0;
+    let attack3 = 0;
+    let defend3 = 0;
+
+    // Add magic stat bonuses (info.magic already holds stats for current level)
+    for (const info of this._magicInventory.getAllMagicInfos()) {
+      if (!info.magic) continue;
+      lifeMax += info.magic.lifeMax || 0;
+      thewMax += info.magic.thewMax || 0;
+      manaMax += info.magic.manaMax || 0;
+      attack += info.magic.attack || 0;
+      defend += info.magic.defend || 0;
+      evade += info.magic.evade || 0;
+      attack2 += info.magic.attack2 || 0;
+      defend2 += info.magic.defend2 || 0;
+      attack3 += info.magic.attack3 || 0;
+      defend3 += info.magic.defend3 || 0;
+    }
+
+    // Add equipment stat bonuses (equip slots + noNeedToEquip bag items)
+    const eq = this._goodsListManager.sumEquipStats();
+    lifeMax += eq.lifeMax;
+    thewMax += eq.thewMax;
+    manaMax += eq.manaMax;
+    attack += eq.attack;
+    defend += eq.defend;
+    evade += eq.evade;
+    attack2 += eq.attack2;
+    defend2 += eq.defend2;
+    attack3 += eq.attack3;
+    defend3 += eq.defend3;
+
+    this.lifeMax = lifeMax;
+    this.thewMax = thewMax;
+    this.manaMax = manaMax;
+    this.attack = attack;
+    this.defend = defend;
+    this.evade = evade;
+    this.attack2 = attack2;
+    this.defend2 = defend2;
+    this.attack3 = attack3;
+    this.defend3 = defend3;
+
+    // Preserve current HP/Thew/Mana (cap to new max)
+    this.life = Math.min(savedLife, this.lifeMax);
+    this.thew = Math.min(savedThew, this.thewMax);
+    this.mana = Math.min(savedMana, this.manaMax);
+
+    logger.info(
+      `[Player] recalculateBaseStats: lv=${this.level} defend=${this.defend} attack=${this.attack} evade=${this.evade} lifeMax=${this.lifeMax}`
+    );
   }
 
   /**

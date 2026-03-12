@@ -375,6 +375,8 @@ export class Loader {
       const tEffects = performance.now();
       goodsListManager.applyEquipSpecialEffectFromList();
       player.loadMagicEffect();
+      // 从等级配置重新计算基础属性，修正存档中因历史 bug 累积的错误值
+      player.recalculateBaseStats();
       time("Effects", tEffects);
 
       this.reportProgress(95, "初始化视角...");
@@ -626,6 +628,8 @@ export class Loader {
       // 应用装备特效 + 武功效果
       goodsListManager.applyEquipSpecialEffectFromList();
       player.loadMagicEffect();
+      // 从等级配置重新计算基础属性，修正存档中因历史 bug 累积的错误值
+      player.recalculateBaseStats();
 
       // 恢复选项设置
       if (data.option) {

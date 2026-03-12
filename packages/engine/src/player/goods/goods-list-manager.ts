@@ -710,6 +710,34 @@ export class GoodsListManager {
   }
 
   /**
+   * Sum stat bonuses from all equipped items (equip slots + noNeedToEquip bag items).
+   * Used by Player.recalculateBaseStats() to restore correct stats on save load.
+   */
+  sumEquipStats(): {
+    attack: number; attack2: number; attack3: number;
+    defend: number; defend2: number; defend3: number;
+    evade: number; lifeMax: number; thewMax: number; manaMax: number;
+  } {
+    const s = { attack:0, attack2:0, attack3:0, defend:0, defend2:0, defend3:0, evade:0, lifeMax:0, thewMax:0, manaMax:0 };
+    const add = (good: Good) => {
+      s.attack += good.attack; s.attack2 += good.attack2; s.attack3 += good.attack3;
+      s.defend += good.defend; s.defend2 += good.defend2; s.defend3 += good.defend3;
+      s.evade += good.evade; s.lifeMax += good.lifeMax; s.thewMax += good.thewMax; s.manaMax += good.manaMax;
+    };
+    for (let i = 0; i < EQUIP_SLOT_COUNT; i++) {
+      const info = this.equipSlots[i];
+      if (info?.good) add(info.good);
+    }
+    for (let i = LIST_INDEX_BEGIN; i <= STORE_INDEX_END; i++) {
+      const info = this.goodsList[i];
+      if (info && info.good.kind === GoodKind.Equipment && info.good.noNeedToEquip > 0) {
+        for (let c = 0; c < info.count; c++) add(info.good);
+      }
+    }
+    return s;
+  }
+
+  /**
    * Get bottom bar items (hotbar) from independent bottomItems array
    */
   getBottomItems(): (GoodsItemInfo | null)[] {

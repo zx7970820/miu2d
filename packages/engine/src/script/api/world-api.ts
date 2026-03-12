@@ -253,6 +253,7 @@ export function createEffectsAPI(
     },
     setLevelFile: async (file) => {
       await levelManager.setLevelFile(file);
+      player.recalculateBaseStats();
     },
   };
 }

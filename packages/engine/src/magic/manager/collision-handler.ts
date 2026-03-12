@@ -315,29 +315,36 @@ export class MagicCollisionHandler implements CollisionHandler {
     // 特殊效果
     this.applySpecialKindEffects(sprite, character, magic, belongCharacter);
 
-    // 命中率检查（闪避）
+    // 命中率检查（闪避）仅决定是否造成伤害，不影响碰撞/销毁流程
+    // Reference C#: 内层 CharacterHited(damage) 检查命中率，外层始终执行销毁
     // Parasitic bypasses the check (always hits)
     const isParasitic = sprite.parasitiferCharacterId !== null;
-    if (!isParasitic && !calcMagicHit(character, belongCharacter)) {
-      return shouldDestroy;
-    }
+    const doesHit = isParasitic || calcMagicHit(character, belongCharacter);
 
-    // 调用 apply（伤害计算）
-    const effect = getEffect(sprite.magic.moveKind);
-    let actualDamage = 0;
-    if (effect?.apply) {
-      const applyCtx = this.callbacks.createApplyContext(sprite, charRef);
-      if (applyCtx) {
-        actualDamage = effect.apply(applyCtx) ?? 0;
-        this.handleExpOnHit(sprite, character, wasAliveBeforeHit);
+    logger.log(
+      `[Combat] ${belongCharacter?.name ?? "?"} -> ${character.name} [${magic.name}]` +
+      ` | attEvade=${belongCharacter?.realEvade ?? 0} defEvade=${character.realEvade}` +
+      ` | ${doesHit ? "HIT" : "MISS"}`
+    );
+
+    if (doesHit) {
+      // 调用 apply（伤害计算）
+      const effect = getEffect(sprite.magic.moveKind);
+      let actualDamage = 0;
+      if (effect?.apply) {
+        const applyCtx = this.callbacks.createApplyContext(sprite, charRef);
+        if (applyCtx) {
+          actualDamage = effect.apply(applyCtx) ?? 0;
+          this.handleExpOnHit(sprite, character, wasAliveBeforeHit);
+        }
       }
+
+      // 吸血效果
+      this.handleRestoreOnHit(sprite, character, magic, belongCharacter, actualDamage);
+
+      // 被攻击时自动使用武功
+      this.handleMagicToUseWhenBeAttacked(sprite, character, belongCharacter);
     }
-
-    // 吸血效果
-    this.handleRestoreOnHit(sprite, character, magic, belongCharacter, actualDamage);
-
-    // 被攻击时自动使用武功
-    this.handleMagicToUseWhenBeAttacked(sprite, character, belongCharacter);
 
     // ============= Ball 弹跳处理 =============
     // if (BelongMagic.Ball > 0) { ... MoveDirection = PathFinder.BouncingAtPoint(...) }

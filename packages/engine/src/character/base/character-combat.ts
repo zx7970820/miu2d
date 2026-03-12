@@ -7,7 +7,7 @@
 
 import { logger } from "../../core/logger";
 import { CharacterState } from "../../core/types";
-import { getCharacterDeathExp, getEffectAmount } from "../../combat/effect-calc";
+import { getCharacterDeathExp } from "../../combat/effect-calc";
 import { type AsfData, getCachedAsf, loadAsf } from "../../resource/format/asf";
 import { ResourcePath } from "../../resource/resource-paths";
 import { distance, getViewTileDistance, tileToPixel } from "../../utils";
@@ -213,23 +213,18 @@ export abstract class CharacterCombat extends CharacterMovement {
 
     this._lastAttacker = attacker as CharacterCombat | null;
 
-    // 计算伤害
-    let actualDamage = Math.max(0, damage - this.realDefend);
+    // 先扣防御+min(10)，再让护盾吸收（可降至 0）
+    const minimalDamage = 10;
+    let actualDamage = Math.max(damage - this.realDefend, minimalDamage);
 
-    // 护盾减伤
+    // 护盾减伤（使用 currentEffect 包含 AddMagicEffect 装备加成）
     for (const sprite of this._magicSpritesInEffect) {
       if (sprite.magic.moveKind === 13 && sprite.magic.specialKind === 3) {
-        const shieldEffect =
-          (sprite.magic.effect === 0 ? this.attack : sprite.magic.effect) +
-          (sprite.magic.effectExt || 0);
-        actualDamage -= shieldEffect;
+        actualDamage -= sprite.currentEffect;
       }
     }
-
-    const minimalDamage = this.isPlayer ? 10 : 50;
-    if (actualDamage < minimalDamage) {
-      actualDamage = minimalDamage;
-    }
+    // 护盾可将伤害降至 0（完全吸收）
+    if (actualDamage < 0) actualDamage = 0;
     if (actualDamage > this.life) {
       actualDamage = this.life;
     }
@@ -295,23 +290,19 @@ export abstract class CharacterCombat extends CharacterMovement {
     let effect2 = damage2 - this.defend2;
     let effect3 = damage3 - this.defend3;
 
-    // 护盾减伤
+    // 护盾减伤（使用 currentEffect 包含 AddMagicEffect 装备加成）
     for (const sprite of this._magicSpritesInEffect) {
       if (sprite.magic.moveKind === 13 && sprite.magic.specialKind === 3) {
-        const m = sprite.magic;
-        const damageReduce = getEffectAmount(m, this, "effect");
-        const damageReduce2 = getEffectAmount(m, this, "effect2");
-        const damageReduce3 = getEffectAmount(m, this, "effect3");
-        effect3 -= damageReduce3;
-        effect2 -= damageReduce2;
-        effect -= damageReduce;
+        effect -= sprite.currentEffect;
+        effect2 -= sprite.currentEffect2;
+        effect3 -= sprite.currentEffect3;
       }
     }
 
     let totalEffect = effect;
     if (effect3 > 0) totalEffect += effect3;
     if (effect2 > 0) totalEffect += effect2;
-
+    // 护盾先减（可为负），最低下限保证受伤 ≥ 10
     if (totalEffect < 10) totalEffect = 10;
     if (totalEffect > this.life) totalEffect = this.life;
 
@@ -322,7 +313,9 @@ export abstract class CharacterCombat extends CharacterMovement {
     }
 
     logger.log(
-      `[Character] ${this.name} took ${totalEffect} magic damage (${this.life}/${this.lifeMax} HP)`
+      `[Combat] ${attacker?.name ?? "?"} -> ${this.name}` +
+      ` dmg=${damage} def=${this.realDefend} net=${totalEffect}` +
+      ` HP: ${this.life + totalEffect} -> ${this.life}/${this.lifeMax}`
     );
 
     this.onDamaged(attacker as CharacterCombat | null, totalEffect);

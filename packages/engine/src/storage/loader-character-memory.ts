@@ -232,6 +232,9 @@ export class CharacterMemoryManager {
 
       // Reference: Globals.ThePlayer.LoadMagicEffect()
       player.loadMagicEffect();
+
+      // 从等级配置重新计算基础属性，修正存档中可能累积的错误值
+      player.recalculateBaseStats();
     }
 
     // GuiManager.StateInterface.Index = GuiManager.EquipInterface.Index = Globals.PlayerIndex;
