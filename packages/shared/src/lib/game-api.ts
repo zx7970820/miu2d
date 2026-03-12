@@ -50,6 +50,9 @@ export function getResourceDomain(): string {
  * @param key S3 对象 key，如 saves/userId/saveId.jpg
  */
 export function getS3Url(key: string): string {
+  if (key.startsWith("http://") || key.startsWith("https://")) {
+    return key;
+  }
   const base = (import.meta.env.VITE_S3_BASE_URL as string | undefined) ?? "/s3/miu2d";
   return `${base.replace(/\/+$/, "")}/${key}`;
 }

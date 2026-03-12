@@ -7,7 +7,7 @@
   "build": {
     "env": {
       "VITE_DEMO_RESOURCES_DOMAIN": "https://miu2d.williamchan.me:10443",
-      "VITE_S3_BASE_URL": "https://miu2d.williamchan.me:10443/s3/miu2d"
+      "VITE_S3_BASE_URL": "https://s3.williamchan.me:10443/miu2d"
     }
   },
   "rewrites": [
