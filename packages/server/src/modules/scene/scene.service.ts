@@ -451,8 +451,11 @@ export class SceneService {
       }
     }
 
-    // 4. 场景脚本（存于 scene.data.scripts，随 manifest 下发，引擎直接预热到缓存）
-    const scripts: Record<string, string> = sceneData?.scripts ?? {};
+    // 4. 脚本 + 陷阱脚本合并下发（引擎 prewarmCache() 统一预热到缓存，两类都能命中）
+    const scripts: Record<string, string> = {
+      ...(sceneData?.scripts ?? {}),
+      ...(sceneData?.traps ?? {}),
+    };
 
     return { tiles, missing, scripts };
   }

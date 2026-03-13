@@ -196,7 +196,7 @@ export function parseScript(content: string, fileName: string): ScriptData {
  */
 export async function loadScript(url: string): Promise<ScriptData | null> {
   // 先尝试从缓存加载原始路径
-  const cachedResult = await resourceLoader.loadIni<ScriptData>(
+  const cachedResult = await resourceLoader.loadParsed<ScriptData>(
     url,
     (content) => parseScript(content, url.replace(/^\/resources\//, "")),
     "script"
@@ -217,7 +217,7 @@ export async function loadScript(url: string): Promise<ScriptData | null> {
     const altCaseUrl = url.replace(fileName, altCaseFileName);
     logger.log(`[loadScript] Map script not found, trying alternate case: ${altCaseUrl}`);
 
-    const altResult = await resourceLoader.loadIni<ScriptData>(
+    const altResult = await resourceLoader.loadParsed<ScriptData>(
       altCaseUrl,
       (content) => parseScript(content, altCaseUrl.replace(/^\/resources\//, "")),
       "script"
@@ -229,7 +229,7 @@ export async function loadScript(url: string): Promise<ScriptData | null> {
     // Try common folder
     const commonUrl = ResourcePath.scriptCommon(fileName);
     logger.log(`[loadScript] Map script not found, trying common: ${commonUrl}`);
-    const commonResult = await resourceLoader.loadIni<ScriptData>(
+    const commonResult = await resourceLoader.loadParsed<ScriptData>(
       commonUrl,
       (content) => parseScript(content, extractRelativePath(commonUrl)),
       "script"

@@ -7,7 +7,7 @@
  * 3. 缺少加载统计 - 提供详细的加载统计信息
  *
  * 支持的资源类型：
- * - text: UTF-8 文本文件 (.txt, .ini)
+ * - text: UTF-8 文本文件 (.txt)
  * - binary: 二进制文件 (.map, .asf, .mpc)
  * - audio: 音频文件 (.ogg, .mp3, .wav)
  *
@@ -100,8 +100,8 @@ class ResourceLoaderImpl {
   private binaryCache = new Map<string, CacheEntry<ArrayBuffer>>();
   // 音频资源缓存（AudioBuffer）
   private audioCache = new Map<string, CacheEntry<AudioBuffer>>();
-  // INI 解析结果缓存（缓存解析后的对象，避免重复解析）
-  private iniCache = new Map<string, CacheEntry<unknown>>();
+  // 解析结果缓存（存储 loadParsed 返回的对象，避免重复解析）
+  private parsedCache = new Map<string, CacheEntry<unknown>>();
 
   // 正在加载中的资源（防止重复请求）
   private pendingLoads = new Map<string, Promise<unknown>>();
@@ -426,7 +426,7 @@ class ResourceLoaderImpl {
     }
   }
 
-  // ==================== INI/配置资源 ====================
+  // ==================== 解析资源（文本 → 对象） ====================
 
   /**
    * 加载并解析配置文件（缓存解析后的结果）
@@ -435,7 +435,7 @@ class ResourceLoaderImpl {
    * @param resourceType 资源类型，用于分类统计（默认 'other'）
    * @returns 解析后的对象，失败返回 null
    */
-  async loadIni<T>(
+  async loadParsed<T>(
     path: string,
     parser: (content: string) => T | null,
     resourceType: ResourceType = "other"
@@ -448,7 +448,7 @@ class ResourceLoaderImpl {
     typeStats.requests++;
 
     // 检查解析结果缓存
-    const cached = this.iniCache.get(cacheKey);
+    const cached = this.parsedCache.get(cacheKey);
     if (cached) {
       this.stats.cacheHits++;
       typeStats.hits++;
@@ -467,7 +467,7 @@ class ResourceLoaderImpl {
     }
 
     // 开始加载和解析
-    const loadPromise = this.fetchAndParseIni(cacheKey, normalizedPath, parser, resourceType);
+    const loadPromise = this.fetchAndParse(cacheKey, normalizedPath, parser, resourceType);
     this.pendingLoads.set(pendingKey, loadPromise);
 
     try {
@@ -483,7 +483,7 @@ class ResourceLoaderImpl {
    * @param cacheKey 缓存键（包含类型前缀）
    * @param path 实际请求路径
    */
-  private async fetchAndParseIni<T>(
+  private async fetchAndParse<T>(
     cacheKey: string,
     path: string,
     parser: (content: string) => T | null,
@@ -534,13 +534,13 @@ class ResourceLoaderImpl {
         lastAccess: Date.now(),
         accessCount: 1,
       };
-      this.iniCache.set(cacheKey, entry);
+      this.parsedCache.set(cacheKey, entry);
       this.updateCacheStats();
       this.recordRecentLoad(path, resourceType, estimatedSize);
 
       return parsed;
     } catch (error) {
-      logger.warn(`[ResourceLoader] Failed to load/parse INI: ${path}`, error);
+      logger.warn(`[ResourceLoader] Failed to fetch/parse: ${path}`, error);
       this.stats.failures++;
       // 缓存失败的路径，避免重复请求
       this.failedPaths.add(cacheKey);
@@ -575,7 +575,7 @@ class ResourceLoaderImpl {
     }
 
     // 检查解析结果缓存
-    const cached = this.iniCache.get(cacheKey);
+    const cached = this.parsedCache.get(cacheKey);
     if (cached) {
       this.stats.cacheHits++;
       typeStats.hits++;
@@ -650,7 +650,7 @@ class ResourceLoaderImpl {
         lastAccess: Date.now(),
         accessCount: 1,
       };
-      this.iniCache.set(cacheKey, entry);
+      this.parsedCache.set(cacheKey, entry);
       this.updateCacheStats();
       this.recordRecentLoad(path, resourceType, estimatedSize);
 
@@ -685,7 +685,7 @@ class ResourceLoaderImpl {
       return null;
     }
 
-    const cached = this.iniCache.get(cacheKey);
+    const cached = this.parsedCache.get(cacheKey);
     if (cached) {
       this.stats.cacheHits++;
       typeStats.hits++;
@@ -752,7 +752,7 @@ class ResourceLoaderImpl {
         lastAccess: Date.now(),
         accessCount: 1,
       };
-      this.iniCache.set(cacheKey, entry);
+      this.parsedCache.set(cacheKey, entry);
       this.updateCacheStats();
       this.recordRecentLoad(path, resourceType, estimatedSize);
 
@@ -790,7 +790,7 @@ class ResourceLoaderImpl {
       case "script":
       case "other": {
         const cacheKey = `${type}:${normalizedPath}`;
-        return this.iniCache.has(cacheKey);
+        return this.parsedCache.has(cacheKey);
       }
       default:
         return false;
@@ -845,7 +845,7 @@ class ResourceLoaderImpl {
       case "script":
       case "other": {
         const cacheKey = `${type}:${normalizedPath}`;
-        const entry = this.iniCache.get(cacheKey);
+        const entry = this.parsedCache.get(cacheKey);
         if (entry) {
           entry.lastAccess = Date.now();
           entry.accessCount++;
@@ -870,7 +870,7 @@ class ResourceLoaderImpl {
     const size = JSON.stringify(data).length;
 
     const cacheKey = `${type}:${normalizedPath}`;
-    this.iniCache.set(cacheKey, {
+    this.parsedCache.set(cacheKey, {
       data,
       size,
       loadTime: now,
@@ -914,7 +914,7 @@ class ResourceLoaderImpl {
       totalSize += entry.size;
       totalEntries++;
     }
-    for (const entry of this.iniCache.values()) {
+    for (const entry of this.parsedCache.values()) {
       totalSize += entry.size;
       totalEntries++;
     }
@@ -963,20 +963,20 @@ class ResourceLoaderImpl {
   }
 
   /**
-   * 预热已解析的 INI/脚本对象到 iniCache（来自 SceneManifest.scripts 等预下发数据）
+   * 预热已解析的脚本/配置对象到 parsedCache（来自 SceneManifest.scripts 等预下发数据）
    *
-   * 将已解析的对象直接写入 iniCache，使后续 loadIni 调用命中缓存，
+   * 将已解析的对象直接写入 parsedCache，使后续 loadParsed 调用命中缓存，
    * 绕过文件存储请求。仅在缓存中尚无该键时写入（不覆盖已有缓存）。
    *
-   * @param url 与 loadIni 调用时相同的 url（如 ResourcePath.scriptMap(sceneKey) + "/" + fileName）
+   * @param url 与 loadText 调用时相同的 url（如 ResourcePath.scriptMap(sceneKey) + "/" + fileName）
    * @param parsed 已解析的对象
-   * @param resourceType 资源类型前缀（需与 loadIni 调用时一致）
+   * @param resourceType 资源类型前缀（需与 loadText 调用时一致）
    */
-  prewarmIni(url: string, parsed: unknown, resourceType: ResourceType): void {
+  prewarmCache(url: string, parsed: unknown, resourceType: ResourceType): void {
     const normalizedPath = this.normalizePath(url);
     const cacheKey = `${resourceType}:${normalizedPath}`;
-    if (!this.iniCache.has(cacheKey)) {
-      this.iniCache.set(cacheKey, {
+    if (!this.parsedCache.has(cacheKey)) {
+      this.parsedCache.set(cacheKey, {
         data: parsed,
         size: 256,
         loadTime: Date.now(),
@@ -1027,7 +1027,7 @@ class ResourceLoaderImpl {
       this.textCache.clear();
       this.binaryCache.clear();
       this.audioCache.clear();
-      this.iniCache.clear();
+      this.parsedCache.clear();
       this.failedPaths.clear();
       // 关闭用于解码音频的 AudioContext，释放 OS 音频线程
       if (this.audioContext) {
@@ -1041,12 +1041,12 @@ class ResourceLoaderImpl {
     } else if (type === "audio") {
       this.audioCache.clear();
     } else {
-      // 按类型前缀精确清除 iniCache 中的条目
+      // 按类型前缀精确清除 parsedCache 中的条目
       // 缓存键格式: "${resourceType}:${path}"
       const prefix = `${type}:`;
-      for (const key of this.iniCache.keys()) {
+      for (const key of this.parsedCache.keys()) {
         if (key.startsWith(prefix)) {
-          this.iniCache.delete(key);
+          this.parsedCache.delete(key);
         }
       }
     }

@@ -209,7 +209,7 @@ async function loadMapFromSceneApi(fullMapPath: string): Promise<MiuMapData | nu
       resourceLoader.prewarmMissing(manifest.missing);
     }
 
-    // 将场景脚本预热到 iniCache（存于数据库，随 manifest 下发，避免去文件存储查找）
+    // 将场景脚本（含陷阱脚本）预热到 textCache（存于数据库，随 manifest 下发，避免去文件存储查找）
     if (manifest?.scripts) {
       const scriptEntries = Object.entries(manifest.scripts);
       if (scriptEntries.length > 0) {
@@ -217,10 +217,10 @@ async function loadMapFromSceneApi(fullMapPath: string): Promise<MiuMapData | nu
           const url = `${ResourcePath.scriptMap(sceneKey)}/${fileName}`;
           const relPath = `script/map/${sceneKey}/${fileName}`;
           const parsed = parseScript(content, relPath);
-          resourceLoader.prewarmIni(url, parsed, "script");
+          resourceLoader.prewarmCache(url, parsed, "script");
         }
         logger.log(
-          `[EngineMapLoader] Manifest: ${manifest.tiles.length} tiles, ${manifest.missing?.length ?? 0} missing sprites, ${scriptEntries.length} scripts prewarmed`
+          `[EngineMapLoader] Manifest: ${manifest.tiles.length} tiles, ${manifest.missing?.length ?? 0} missing sprites, ${scriptEntries.length} scripts/traps prewarmed`
         );
       } else {
         logger.log(

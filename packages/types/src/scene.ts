@@ -455,7 +455,11 @@ export interface SceneManifest {
   tiles: string[];
   /** 已知缺失的精灵 MSF 路径（相对资源根），客户端可直接标记为 404 跳过 */
   missing: string[];
-  /** 场景脚本内容：key = 文件名（如 "欢迎.txt"），value = 脚本文本 */
+  /**
+   * 脚本内容预热表：key = 文件名（如 "欢迎.txt" / "Trap-3.txt"），value = 脚本文本。
+   * 包含 scene.data.scripts（对话/剧情脚本）和 scene.data.traps（陷阱脚本）的合集，
+   * 引擎 prewarmCache() 统一注入 textCache，访问时直接命中缓存无需网络请求。
+   */
   scripts: Record<string, string>;
 }
 

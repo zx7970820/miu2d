@@ -309,9 +309,9 @@ export class GameManager {
       clearResourceCaches: () => {
         // 清理精灵缓存（SpriteSet 持有 AsfData 和 atlas canvas）
         Sprite.clearCache();
-        // 清理 ASF 解析缓存（从 resourceLoader.iniCache 删除 asf: 前缀条目）
+        // 清理 ASF 解析缓存（从 resourceLoader.textCache 删除 asf: 前缀条目）
         clearAsfCache();
-        // 清理 MPC 解析缓存（从 resourceLoader.iniCache 删除 mpc: 前缀条目）
+        // 清理 MPC 解析缓存（从 resourceLoader.textCache 删除 mpc: 前缀条目）
         clearMpcCache();
         // 清理 MPC atlas canvas 缓存
         clearMpcAtlasCache();

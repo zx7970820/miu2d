@@ -6,6 +6,7 @@
  * GET /game/:gameSlug/api/scenes/npc/:sceneKey/:npcKey   - 获取 NPC JSON 数据
  * GET /game/:gameSlug/api/scenes/obj/:sceneKey/:objKey   - 获取 OBJ JSON 数据
  */
+import { createHash } from "node:crypto";
 import { Hono } from "hono";
 import { sceneService } from "../modules/scene/scene.service";
 import { Logger } from "../utils/logger";
@@ -54,10 +55,17 @@ sceneRoutes.get(":gameSlug/api/scenes/:sceneKey/manifest", async (c) => {
       return c.json({ error: "Scene not found" }, 404);
     }
 
-    c.header("Content-Type", "application/json");
-    c.header("Cache-Control", "public, max-age=30");
+    const body = JSON.stringify(manifest);
+    const etag = `"${createHash("sha1").update(body).digest("hex").slice(0, 16)}"`;
 
-    return c.json(manifest);
+    c.header("Cache-Control", "public, max-age=30");
+    c.header("ETag", etag);
+
+    if (c.req.header("if-none-match") === etag) {
+      return c.body(null, 304);
+    }
+
+    return c.text(body, 200, { "Content-Type": "application/json" });
   } catch (error) {
     logger.error("[getSceneManifest] Error:", error);
     return c.json({ error: "Not found" }, 404);
