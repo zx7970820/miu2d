@@ -247,94 +247,42 @@ export class MovementSpriteFactory {
     origin: Vector2,
     destroyOnEnd: boolean
   ): void {
+    const HEART_DELAY = 10;
+    const HEART_DECAY = 0.1;
     const directions = getDirection32List();
-    const delayTime = 30;
 
-    // First half - expanding
-    for (let i = 0; i < 16; i++) {
-      const delay = i * delayTime;
-      const dir1 = directions[i];
-      const dir2 = directions[31 - i];
+    for (let i = 0; i < 32; i++) {
+      const dir = directions[i];
+      let waitMs: number;
+      let speedFactor: number;
 
-      const sprite1 = MagicSprite.createMovingOnDirection(
+      if (i < 8) {
+        waitMs = (8 - i) * HEART_DELAY;
+        speedFactor = 1.0 - i * HEART_DECAY;
+      } else if (i < 16) {
+        const count = i - 8;
+        waitMs = count * HEART_DELAY;
+        speedFactor = 1.0 - (8 - count) * HEART_DECAY;
+      } else if (i < 24) {
+        const count = i - 16;
+        waitMs = count * HEART_DELAY + 8 * HEART_DELAY;
+        speedFactor = 1.0 + count * HEART_DECAY;
+      } else {
+        const count = i - 24;
+        waitMs = (8 - count) * HEART_DELAY + 8 * HEART_DELAY;
+        speedFactor = 1.0 + (8 - count) * HEART_DECAY;
+      }
+
+      const sprite = MagicSprite.createMovingOnDirection(
         userId,
         magic,
         origin,
-        dir1,
+        dir,
         destroyOnEnd,
-        getSpeedRatio(dir1)
+        getSpeedRatio(dir) * Math.max(0.01, speedFactor)
       );
-      this.callbacks.addWorkItem(delay, sprite1);
-
-      const sprite2 = MagicSprite.createMovingOnDirection(
-        userId,
-        magic,
-        origin,
-        dir2,
-        destroyOnEnd,
-        getSpeedRatio(dir2)
-      );
-      this.callbacks.addWorkItem(delay, sprite2);
+      this.callbacks.addWorkItem(waitMs, sprite);
     }
-
-    // Middle
-    const middleDir = directions[16];
-    const middleSprite = MagicSprite.createMovingOnDirection(
-      userId,
-      magic,
-      origin,
-      middleDir,
-      destroyOnEnd,
-      getSpeedRatio(middleDir)
-    );
-    this.callbacks.addWorkItem(16 * delayTime, middleSprite);
-
-    // Second half - contracting
-    const secondSprite = MagicSprite.createMovingOnDirection(
-      userId,
-      magic,
-      origin,
-      middleDir,
-      destroyOnEnd,
-      getSpeedRatio(middleDir)
-    );
-    this.callbacks.addWorkItem(17 * delayTime, secondSprite);
-
-    for (let j = 15; j > 0; j--) {
-      const delay = (18 + 15 - j) * delayTime;
-      const dir1 = directions[j];
-      const dir2 = directions[32 - j];
-
-      const sprite1 = MagicSprite.createMovingOnDirection(
-        userId,
-        magic,
-        origin,
-        dir1,
-        destroyOnEnd,
-        getSpeedRatio(dir1)
-      );
-      this.callbacks.addWorkItem(delay, sprite1);
-
-      const sprite2 = MagicSprite.createMovingOnDirection(
-        userId,
-        magic,
-        origin,
-        dir2,
-        destroyOnEnd,
-        getSpeedRatio(dir2)
-      );
-      this.callbacks.addWorkItem(delay, sprite2);
-    }
-
-    const finalSprite = MagicSprite.createMovingOnDirection(
-      userId,
-      magic,
-      origin,
-      directions[0],
-      destroyOnEnd,
-      getSpeedRatio(directions[0])
-    );
-    this.callbacks.addWorkItem((18 + 15) * delayTime, finalSprite);
   }
 
   /** 螺旋移动武功 */
@@ -345,15 +293,19 @@ export class MovementSpriteFactory {
     destination: Vector2,
     destroyOnEnd: boolean
   ): void {
+    const HELIX_INTERVAL = 10;
     const direction = { x: destination.x - origin.x, y: destination.y - origin.y };
-    const directionIndex = getDirectionIndex(direction, 32);
+    const dir32 = getDirectionIndex(direction, 32);
     const directions = getDirection32List();
-    const magicDelayMs = 30;
+
+    let startDir = dir32 - 8;
+    if (startDir < 0) startDir += 32;
+    startDir = (32 - startDir) % 32;
 
     for (let i = 0; i < 32; i++) {
-      const dirIdx = (directionIndex + i) % 32;
+      const dirIdx = (startDir + i) % 32;
       const dir = directions[dirIdx];
-      const delay = i * magicDelayMs;
+      const delay = i * HELIX_INTERVAL;
       const sprite = MagicSprite.createMovingOnDirection(
         userId,
         magic,
