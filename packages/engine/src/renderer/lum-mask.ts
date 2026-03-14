@@ -188,8 +188,13 @@ function collectLumSources(
     }
   }
 
-  // 玩家自身光源（SetPlayerLum）
-  if (playerTile !== null && playerPixel !== null && shouldGlow(playerLum)) {
+  // 玩家自身光源（SetPlayerLum）：只在夜晚（mapTime===1）或地图亮度 <= 20 时触发
+  if (
+    playerTile !== null &&
+    playerPixel !== null &&
+    playerLum > 0 &&
+    (mapTime === 1 || mainLum <= 20)
+  ) {
     tryAdd(playerTile.x, playerTile.y, playerPixel.x - cameraX, playerPixel.y - cameraY);
   }
 
