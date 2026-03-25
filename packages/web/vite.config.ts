@@ -227,6 +227,7 @@ export default defineConfig(({ mode }) => {
       "/trpc": {
         target: backendUrl,
         changeOrigin: true,
+        cookieDomainRewrite: "",
       },
       // MinIO presigned URL 代理：/s3/* → MinIO
       // 本地直连 MinIO 时去掉 /s3 前缀；远端 nginx 已处理 /s3/ 路由，不需要 rewrite
@@ -241,6 +242,7 @@ export default defineConfig(({ mode }) => {
       "/game": {
         target: backendUrl,
         changeOrigin: true,
+        cookieDomainRewrite: "",
         bypass: (req) => {
           const url = req.url || "";
           // 匹配 /game/{gameSlug}/api/* 或 /game/{gameSlug}/resources/*

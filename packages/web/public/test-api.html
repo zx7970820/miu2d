@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Game API</title>
+</head>
+<body>
+    <h1>Test Game API</h1>
+    <button onclick="testSceneApi()">Test Scene API</button>
+    <button onclick="testResourceApi()">Test Resource API</button>
+    <pre id="output"></pre>
+
+    <script>
+        const gameSlug = 'enozheng123-gmail-com';
+        const sceneKey = 'map_002_凌绝峰峰顶';
+        
+        function log(message) {
+            const output = document.getElementById('output');
+            output.textContent += message + '\n';
+            console.log(message);
+        }
+        
+        async function testSceneApi() {
+            log('Testing Scene API...');
+            try {
+                const url = `/game/${gameSlug}/api/scenes/${encodeURIComponent(sceneKey)}/mmf?_t=${Date.now()}`;
+                log(`URL: ${url}`);
+                
+                const response = await fetch(url, { credentials: 'include' });
+                log(`Status: ${response.status} ${response.statusText}`);
+                log(`Content-Type: ${response.headers.get('content-type')}`);
+                log(`Content-Length: ${response.headers.get('content-length')}`);
+                
+                if (response.ok) {
+                    const buffer = await response.arrayBuffer();
+                    log(`Buffer size: ${buffer.byteLength} bytes`);
+                    
+                    // Check if it's a valid MMF file
+                    const view = new DataView(buffer);
+                    const magic = String.fromCharCode(view.getUint8(0), view.getUint8(1), view.getUint8(2), view.getUint8(3));
+                    log(`Magic: ${magic}`);
+                    
+                    if (magic === 'MMF1') {
+                        log('✓ Valid MMF file!');
+                    } else {
+                        log('✗ Invalid MMF file!');
+                    }
+                } else {
+                    const text = await response.text();
+                    log(`Error: ${text}`);
+                }
+            } catch (error) {
+                log(`Exception: ${error.message}`);
+                console.error(error);
+            }
+        }
+        
+        async function testResourceApi() {
+            log('Testing Resource API...');
+            try {
+                const url = `/game/${gameSlug}/resources/map/map_002_凌绝峰峰顶.mmf?_t=${Date.now()}`;
+                log(`URL: ${url}`);
+                
+                const response = await fetch(url, { credentials: 'include' });
+                log(`Status: ${response.status} ${response.statusText}`);
+                log(`Content-Type: ${response.headers.get('content-type')}`);
+                log(`Content-Length: ${response.headers.get('content-length')}`);
+                
+                if (response.ok) {
+                    const buffer = await response.arrayBuffer();
+                    log(`Buffer size: ${buffer.byteLength} bytes`);
+                    log('✓ Resource loaded successfully!');
+                } else {
+                    const text = await response.text();
+                    log(`Error: ${text}`);
+                }
+            } catch (error) {
+                log(`Exception: ${error.message}`);
+                console.error(error);
+            }
+        }
+    </script>
+</body>
+</html>

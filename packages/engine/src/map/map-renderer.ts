@@ -4,7 +4,7 @@ import { logger } from "../core/logger";
 import type { Renderer } from "../renderer/renderer";
 import { loadMpc } from "../resource/format/mpc";
 import { resourceLoader } from "../resource/resource-loader";
-import { ResourcePath } from "../resource/resource-paths";
+import { ResourcePath, ResourceDirs } from "../resource/resource-paths";
 import { tileToPixel } from "../utils/coordinate";
 import { MapBase } from "./map-base";
 import type { Camera, MiuMapData, Mpc } from "./types";
@@ -198,8 +198,8 @@ export async function loadMapMpcs(
   renderer.maxTileHeight = 0;
   renderer.maxTileWidth = 0;
 
-  // MSF/MPC 基础路径: msf/map/{mapName}/
-  let msfBasePath = `msf/map/${mapNameWithoutExt}`;
+  // MSF/MPC 基础路径: mpc/map/{mapName}/
+  let msfBasePath = `${ResourceDirs.mpc.map}/${mapNameWithoutExt}`;
   if (resourceRoot) {
     msfBasePath = `${resourceRoot}/${msfBasePath}`;
   } else {

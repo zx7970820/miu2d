@@ -30,7 +30,7 @@ dev-dist
 *.njsproj
 *.sln
 *.sw?
-/resources*
+resources/*
 /JxqyHD
 /canghai
 /JXQY-all-in-one

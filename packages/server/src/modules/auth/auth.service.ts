@@ -111,8 +111,8 @@ export class AuthService {
     if (!res) return;
     res.setCookie(SESSION_COOKIE_NAME, sessionId, {
       httpOnly: true,
-      sameSite: "none",
-      secure: true,
+      sameSite: env.isProd ? "none" : "lax",
+      secure: env.cookieSecure,
       maxAge: SESSION_COOKIE_MAX_AGE,
       path: "/",
     });
@@ -124,8 +124,8 @@ export class AuthService {
     if (!res) return;
     res.deleteCookie(SESSION_COOKIE_NAME, {
       httpOnly: true,
-      sameSite: "none",
-      secure: true,
+      sameSite: env.isProd ? "none" : "lax",
+      secure: env.cookieSecure,
       path: "/",
     });
   }
